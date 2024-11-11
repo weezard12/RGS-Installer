@@ -9,9 +9,55 @@
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
-        AllowsTransparency="True">
+        AllowsTransparency="True"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
     <Grid>
-        <Border Background="Black" CornerRadius="30"/>
-        <Frame x:Name="MainFrame" NavigationUIVisibility="Hidden" Margin="30"/>
+        <Border CornerRadius="30" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
+                    <GradientStop Color="#D8B5FF" Offset="0.1"/>
+                    <GradientStop Color="	#1EAE98" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Label Content="RGS INSTALLER" Grid.Row="0" FontSize="30" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+            <StackPanel x:Name="AppsPanel" Grid.Row="1" Margin="30,0,30,30">
+                
+            </StackPanel>
+        </Grid>
+        <Grid Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border CornerRadius="10" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="0">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
+                        <GradientStop Color="#EA8D8D" Offset="0.1"/>
+                        <GradientStop Color="	#A890FE" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+
+            </Border>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Button Margin="8" Click="Exit_Click" Content="X" Grid.Column="0" Grid.Row="0" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="White" Background="Transparent" BorderThickness="0"/>
+                <ScrollBar Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+
+                </ScrollBar>
+            </Grid>
+
+        </Grid>
+        
+        
     </Grid>
 </Window>

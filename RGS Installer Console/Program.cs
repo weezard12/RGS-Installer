@@ -11,10 +11,28 @@ namespace RGS_Installer_Console
         static void Main(string[] args)
         {
             //Console.WriteLine(args[0]);
-            InstallCommand("C:\\Users\\User1\\AppData\\Local\\Temp\\RGS Installer", "weezard12/RGS-Manager");
+            //InstallCommand("C:\\Users\\User1\\AppData\\Local\\Temp\\RGS Installer", "weezard12/RGS-Manager");
+            CreateRGSFolder();
             Console.ReadLine();
         }
 
+        #region BasicSetup
+        private static void CreateRGSFolder()
+        {
+            string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+
+            string newFolderName = "RGS Studios";
+            string newFolderPath = Path.Combine(userDirectory, newFolderName);
+
+            
+            Directory.CreateDirectory(newFolderPath);
+
+            Console.WriteLine($"Folder created at: {newFolderPath}");
+        }
+
+        #endregion
+
+        #region Install
         private static async void InstallCommand(string installetionPath, string gitRepo)
         {
             await InstallLatestReleaseAsync(installetionPath, gitRepo);
@@ -92,6 +110,11 @@ namespace RGS_Installer_Console
             }
         }
 
+        #endregion
+
+        #region Checks
+
+        #endregion
 
         private static void RunGitCommand(string arguments)
         {
@@ -119,5 +142,14 @@ namespace RGS_Installer_Console
                 throw new Exception("Git command failed to execute.");
             }
         }
+
+        // installer info.txt
+        // name
+        // version
+        // release date
+        // grediant bkg start
+        // grediant bkg end
+        // grediant image start
+        // grediant image end
     }
 }

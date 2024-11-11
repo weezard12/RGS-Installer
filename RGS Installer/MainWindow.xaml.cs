@@ -20,7 +20,25 @@ namespace RGS_Installer
         public MainWindow()
         {
             InitializeComponent();
-            MainFrame.Navigate(new MainSelectionPage());
+            //MainFrame.Navigate(new MainSelectionPage());
+            AppsPanel.Children.Add(new SelectApp("RGS Manager v2"));
+            AppsPanel.Children.Add(new SelectApp("Count Playtime"));
         }
+
+        // Handles mouse drag to move the window
+        private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Start dragging the window when the user clicks anywhere on the window
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                this.DragMove();
+            }
+        }
+
+        private void Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
+
     }
 }

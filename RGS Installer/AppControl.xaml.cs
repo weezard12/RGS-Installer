@@ -13,14 +13,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace RGS_Installer.Main
+namespace RGS_Installer
 {
     /// <summary>
-    /// Interaction logic for SelectApp.xaml
+    /// Interaction logic for AppControl.xaml
     /// </summary>
-    public partial class SelectApp : UserControl
+    public partial class AppControl : Page
     {
-        public SelectApp()
+        public AppControl()
         {
             InitializeComponent();
         }

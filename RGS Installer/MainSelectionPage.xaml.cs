@@ -24,11 +24,11 @@ namespace RGS_Installer.Main
     {
         public MainSelectionPage()
         {
-            InitializeComponent();
-            MainContent.Content = new SetupPage();
+            //InitializeComponent();
+            //MainContent.Content = new SetupPage();
         }
 
-        private void ToggleButton_Checked(object sender, System.Windows.RoutedEventArgs e)
+       /* private void ToggleButton_Checked(object sender, System.Windows.RoutedEventArgs e)
         {
             // Ensure only one ToggleButton is checked at a time
             if (sender is ToggleButton clickedButton)
@@ -39,13 +39,13 @@ namespace RGS_Installer.Main
                 if (clickedButton != UpdateButton) UpdateButton.IsChecked = false;
 
                 // Update ContentGrid based on the selected button
-/*                ContentGrid.Children.Clear();
+*//*                ContentGrid.Children.Clear();
                 if (clickedButton == UninstallButton)
                     ContentGrid.Children.Add(new UninstallPage());
                 else if (clickedButton == InstallButton)
                     ContentGrid.Children.Add(new MainSelectionPage());
                 else if (clickedButton == UpdateButton)
-                    ContentGrid.Children.Add(new UpdatePage());*/
+                    ContentGrid.Children.Add(new UpdatePage());*//*
             }
         }
 
@@ -59,7 +59,7 @@ namespace RGS_Installer.Main
                 //ContentGrid.Children.Clear();
                 //ContentGrid.Children.Add(new MainSelectionPage());
             }
-        }
+        }*/
 
     }
 }

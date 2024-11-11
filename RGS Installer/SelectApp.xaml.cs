@@ -13,16 +13,17 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace RGS_Installer.Main
+namespace RGS_Installer
 {
     /// <summary>
-    /// Interaction logic for UserControl1.xaml
+    /// Interaction logic for SelectApp.xaml
     /// </summary>
-    public partial class UserControl1 : UserControl
+    public partial class SelectApp : UserControl
     {
-        public UserControl1()
+        public SelectApp(string name)
         {
             InitializeComponent();
+            AppName.Content = name;
         }
     }
 }

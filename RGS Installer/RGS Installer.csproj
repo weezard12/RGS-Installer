@@ -10,11 +10,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="weezard.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\" />
     <Folder Include="Main\" />
   </ItemGroup>
 
   <ItemGroup>
     <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="weezard.png" />
   </ItemGroup>
 
 </Project>
