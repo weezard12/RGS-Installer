@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net.Http.Headers;
+using System.Security.Principal;
 using System.Text.Json;
 
 namespace RGS_Installer_Console
@@ -12,11 +13,25 @@ namespace RGS_Installer_Console
         {
             //Console.WriteLine(args[0]);
             //InstallCommand("C:\\Users\\User1\\AppData\\Local\\Temp\\RGS Installer", "weezard12/RGS-Manager");
-            CreateRGSFolder();
+            if(args.Length == 0)
+                StartBasicSetup();
+            
+            //CreateRGSFolder();
             Console.ReadLine();
         }
 
         #region BasicSetup
+        private static void StartBasicSetup()
+        {
+            Console.WriteLine("Welcome to RGS Installer Console!");
+            Console.WriteLine("This is the non UI application for installing RGS apps easelly.");
+            if (!IsRunningAsAdministrator())
+            {
+                Console.WriteLine("Please open this app as an Administrator for installing apps on this computer.");
+                return;
+            }
+            Console.WriteLine("Starting Setup...");
+        }
         private static void CreateRGSFolder()
         {
             string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
@@ -113,7 +128,14 @@ namespace RGS_Installer_Console
         #endregion
 
         #region Checks
-
+        public static bool IsRunningAsAdministrator()
+        {
+            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+            {
+                WindowsPrincipal principal = new WindowsPrincipal(identity);
+                return principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+        }
         #endregion
 
         private static void RunGitCommand(string arguments)

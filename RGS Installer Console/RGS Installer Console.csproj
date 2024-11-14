@@ -7,5 +7,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
+	
+	<PropertyGroup>
+		<PublishSingleFile>true</PublishSingleFile>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<!-- or win-x86, linux-x64, etc. based on your target OS -->
+		<SelfContained>true</SelfContained>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<!-- optional for smaller file size -->
+		<TrimMode>Full</TrimMode>
+		<!-- optional, for further size reduction by trimming unused code -->
+	</PropertyGroup>
 </Project>
