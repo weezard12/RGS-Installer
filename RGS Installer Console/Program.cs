@@ -12,6 +12,7 @@ namespace RGS_Installer_Console
 {
     internal class Program
     {
+        private static readonly string GITHUB_TOKEN = "";
         // commands
         // install {repository_name}
         // update {repository_name}
@@ -31,10 +32,173 @@ namespace RGS_Installer_Console
 
         public static async void GetReleases()
         {
-            string[] allReleases = await GetAllReleasedRepos("weezard12");
-            //string[] filteredReleases = await FilterReleasesByTag(allReleases,"rgs_installer");
+            ReleaseInfo[] allReleases = await GetAllReleasedRepos("weezard12");
             foreach (var release in allReleases)
-                Console.WriteLine(release);
+            {
+                if(release.Tag == "rgs_installer")
+                {
+                    Console.WriteLine(release);
+                    await InstallReleaseInTemp("weezard12","Count-Playtime",release);
+                }
+                
+            }
+                
+        }
+
+        private static async Task<ReleaseInfo[]> GetAllReleasedRepos(string username)
+        {
+            HttpClient _httpClient = new HttpClient();
+
+            var releaseInfos = new List<ReleaseInfo>();
+
+            try
+            {
+                // Load the GitHub personal access token from environment variable
+                string token = GITHUB_TOKEN;
+                if (string.IsNullOrEmpty(token))
+                {
+                    Console.WriteLine("GitHub token not found. Please set the GITHUB_TOKEN environment variable.");
+                    return Array.Empty<ReleaseInfo>();
+                }
+
+                // Configure HttpClient to use the GitHub token for authorization
+                _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0"); // Required User-Agent header
+                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                // Step 1: Get the list of repositories for the specified user
+                string reposUrl = $"https://api.github.com/users/{username}/repos";
+                var reposResponse = await _httpClient.GetAsync(reposUrl);
+
+                if (!reposResponse.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Failed to fetch repositories for user {username}. Status code: {reposResponse.StatusCode}");
+                    return Array.Empty<ReleaseInfo>();
+                }
+
+                var reposJson = await reposResponse.Content.ReadAsStringAsync();
+                var repos = JArray.Parse(reposJson);
+
+                // Step 2: Loop through each repo and get the latest release information if it exists
+                foreach (var repo in repos)
+                {
+                    string repoName = repo["name"]?.ToString();
+                    string releasesUrl = $"https://api.github.com/repos/{username}/{repoName}/releases/latest";
+
+                    // Fetch the latest release info for each repository
+                    var releaseResponse = await _httpClient.GetAsync(releasesUrl);
+
+                    if (releaseResponse.IsSuccessStatusCode)
+                    {
+                        var releaseJson = await releaseResponse.Content.ReadAsStringAsync();
+                        var release = JObject.Parse(releaseJson);
+
+                        // Create and populate a ReleaseInfo object with release details
+                        var releaseInfo = new ReleaseInfo
+                        {
+                            Name = release["name"]?.ToString(),
+                            Description = release["body"]?.ToString(),
+                            URL = release["html_url"]?.ToString(),
+                            Tag = release["tag_name"]?.ToString(),
+                            Date = release["published_at"]?.ToString()
+                        };
+
+                        releaseInfos.Add(releaseInfo);
+                    }
+                    else if (releaseResponse.StatusCode != System.Net.HttpStatusCode.NotFound)
+                    {
+                        Console.WriteLine($"Failed to fetch release for repo {repoName}. Status code: {releaseResponse.StatusCode}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                return Array.Empty<ReleaseInfo>();
+            }
+
+            return releaseInfos.ToArray();
+
+
+        }
+
+        private static async Task<List<string>> InstallReleaseInTemp(string username, string repoName, ReleaseInfo releaseInfo)
+        {
+            HttpClient _httpClient = new HttpClient();
+
+            var savedFiles = new List<string>();
+            string tempFolder = Path.GetTempPath();
+
+            try
+            {
+                // Load the GitHub token from environment variable
+                string token = GITHUB_TOKEN;
+                if (string.IsNullOrEmpty(token))
+                {
+                    Console.WriteLine("GitHub token not found. Please set the GITHUB_TOKEN environment variable.");
+                    return savedFiles;
+                }
+
+                // Configure HttpClient for authentication and User-Agent
+                _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0"); // Required User-Agent header
+                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+                // Step 1: Construct the URL to fetch the release assets for the specified tag
+                string releaseUrl = $"https://api.github.com/repos/{username}/{repoName}/releases/tags/{releaseInfo.Tag}";
+                var releaseResponse = await _httpClient.GetAsync(releaseUrl);
+
+                if (!releaseResponse.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Failed to fetch release for {releaseInfo.Tag}. Status code: {releaseResponse.StatusCode}");
+                    return savedFiles;
+                }
+
+                var releaseJson = await releaseResponse.Content.ReadAsStringAsync();
+                var release = JObject.Parse(releaseJson);
+
+                // Step 2: Extract assets array and download each asset
+                var assets = release["assets"] as JArray;
+                if (assets == null || assets.Count == 0)
+                {
+                    Console.WriteLine("No assets found for this release.");
+                    return savedFiles;
+                }
+
+                foreach (var asset in assets)
+                {
+                    string assetName = asset["name"]?.ToString();
+                    string downloadUrl = asset["browser_download_url"]?.ToString();
+
+                    if (string.IsNullOrEmpty(downloadUrl))
+                    {
+                        Console.WriteLine($"No download URL found for asset {assetName}");
+                        continue;
+                    }
+
+                    // Download the asset file
+                    var assetResponse = await _httpClient.GetAsync(downloadUrl);
+                    if (!assetResponse.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"Failed to download asset {assetName}. Status code: {assetResponse.StatusCode}");
+                        continue;
+                    }
+
+                    // Save the file to the Temp folder
+                    string filePath = Path.Combine(tempFolder, assetName);
+                    await using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        await assetResponse.Content.CopyToAsync(fileStream);
+                    }
+
+                    Console.WriteLine($"Downloaded and saved {assetName} to {filePath}");
+                    savedFiles.Add(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+
+            return savedFiles;
         }
 
         #region BasicSetup
@@ -69,6 +233,9 @@ namespace RGS_Installer_Console
         #endregion
 
         #region Install
+
+        
+
         private static async void InstallCommand(string installetionPath, string gitRepo)
         {
             await InstallLatestReleaseAsync(installetionPath, gitRepo);
@@ -212,64 +379,7 @@ namespace RGS_Installer_Console
         }
 
 
-        private static async Task<string[]> GetAllReleasedRepos(string username)
-        {
-            HttpClient _httpClient = new HttpClient();
-
-            var releaseUrls = new List<string>();
-
-            try
-            {
-                // Step 1: Get the list of repositories for the specified user
-                string reposUrl = $"https://api.github.com/users/{username}/repos";
-                _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0"); // Set a user-agent header
-
-                var reposResponse = await _httpClient.GetAsync(reposUrl);
-
-                if (!reposResponse.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"Error failed to fetch repositories for user {username}");
-                    return Array.Empty<string>();
-                }
-
-                var reposJson = await reposResponse.Content.ReadAsStringAsync();
-                var repos = JArray.Parse(reposJson);
-
-                // Step 2: Loop through each repo and get the latest release URL if it exists
-                foreach (var repo in repos)
-                {
-                    string repoName = repo["name"]?.ToString();
-                    string releasesUrl = $"https://api.github.com/repos/{username}/{repoName}/releases/latest";
-
-                    // Fetch the latest release info
-                    var releaseResponse = await _httpClient.GetAsync(releasesUrl);
-
-                    if (releaseResponse.IsSuccessStatusCode)
-                    {
-                        var releaseJson = await releaseResponse.Content.ReadAsStringAsync();
-                        var release = JObject.Parse(releaseJson);
-
-                        // Extract the URL to the release
-                        string releaseUrl = release["html_url"]?.ToString();
-                        if (!string.IsNullOrEmpty(releaseUrl))
-                        {
-                            releaseUrls.Add(releaseUrl);
-                        }
-                    }
-                    else if (releaseResponse.StatusCode != System.Net.HttpStatusCode.NotFound)
-                    {
-                        Console.WriteLine($"Error failed to fetch release for repo {repoName}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error {ex.Message}");
-                return Array.Empty<string>();
-            }
-
-            return releaseUrls.ToArray();
-        }
+        
     
         #endregion
 
@@ -389,5 +499,20 @@ namespace RGS_Installer_Console
         // grediant bkg end
         // grediant image start
         // grediant image end
+
+        private class ReleaseInfo
+        {
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public string URL { get; set; }
+            public string Tag { get; set; }
+            public string Date { get; set; }
+
+            public override string ToString()
+            {
+                return string.Format("Name: {0}\n URL: {1}\n Tag: {2}\n Date: {3}\n Description: {4}", Name,URL,Tag,Date,Description);
+
+            }
+        }
     }
 }
