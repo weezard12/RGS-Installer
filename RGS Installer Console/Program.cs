@@ -26,7 +26,7 @@ namespace RGS_Installer_Console
 
             
             Directory.CreateDirectory(newFolderPath);
-
+            
             Console.WriteLine($"Folder created at: {newFolderPath}");
         }
 
