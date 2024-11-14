@@ -18,4 +18,8 @@
 		<TrimMode>Full</TrimMode>
 		<!-- optional, for further size reduction by trimming unused code -->
 	</PropertyGroup>
+	
+	<ItemGroup>
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
 </Project>
