@@ -13,6 +13,8 @@ namespace RGS_Installer_Console
     internal class Program
     {
         private static readonly string GITHUB_TOKEN = "";
+        private static readonly string INSTALLER_TAG = "rgs_installer";
+        private static readonly string USERNAME = "weezard12";
         // commands
         // install {repository_name}
         // update {repository_name}
@@ -25,6 +27,7 @@ namespace RGS_Installer_Console
             //StartBasicSetup();
 
             //CreateRGSFolder();
+
             GetReleases();
 
             Console.ReadLine();
@@ -35,10 +38,13 @@ namespace RGS_Installer_Console
             ReleaseInfo[] allReleases = await GetAllReleasedRepos("weezard12");
             foreach (var release in allReleases)
             {
-                if(release.Tag == "rgs_installer")
+                if(release.Tag == INSTALLER_TAG)
                 {
-                    Console.WriteLine(release);
-                    await InstallReleaseInTemp("weezard12","Count-Playtime",release);
+                    Console.WriteLine(release.Name);
+                    Console.WriteLine(release.Description);
+                    Console.WriteLine(release.Date);
+                    Console.WriteLine(release.URL);
+                    
                 }
                 
             }
@@ -121,12 +127,17 @@ namespace RGS_Installer_Console
 
         }
 
-        private static async Task<List<string>> InstallReleaseInTemp(string username, string repoName, ReleaseInfo releaseInfo)
+
+        private static async Task<List<string>> InstallReleaseInFolder(ReleaseInfo releaseInfo, string assetName, string installPath)
+        {
+            return await InstallReleaseInFolder(releaseInfo.URL,releaseInfo.Tag, assetName, installPath);
+        }
+        private static async Task<List<string>> InstallReleaseInFolder(string releaseURL, string releaseTag, string assetName, string installPath)
         {
             HttpClient _httpClient = new HttpClient();
 
             var savedFiles = new List<string>();
-            string tempFolder = Path.GetTempPath();
+            string tempFolder = Path.Combine(Path.GetTempPath(), installPath);
 
             try
             {
@@ -134,7 +145,7 @@ namespace RGS_Installer_Console
                 string token = GITHUB_TOKEN;
                 if (string.IsNullOrEmpty(token))
                 {
-                    Console.WriteLine("GitHub token not found. Please set the GITHUB_TOKEN environment variable.");
+                    Console.WriteLine("Error GitHub token not found. Please set the GITHUB_TOKEN environment variable.");
                     return savedFiles;
                 }
 
@@ -142,60 +153,28 @@ namespace RGS_Installer_Console
                 _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0"); // Required User-Agent header
                 _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-                // Step 1: Construct the URL to fetch the release assets for the specified tag
-                string releaseUrl = $"https://api.github.com/repos/{username}/{repoName}/releases/tags/{releaseInfo.Tag}";
-                var releaseResponse = await _httpClient.GetAsync(releaseUrl);
+                string downloadUrl = releaseURL.Replace("/tag/", "/download/") + $"/{assetName}";
 
-                if (!releaseResponse.IsSuccessStatusCode)
+                // Download the asset file
+                var assetResponse = await _httpClient.GetAsync(downloadUrl);
+                if (!assetResponse.IsSuccessStatusCode)
+                    Console.WriteLine($"Error Failed to download asset {assetName}. Status code: {assetResponse.StatusCode}");
+
+
+                // Save the file to the Temp folder
+                string filePath = Path.Combine(tempFolder, assetName);
+                await using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
-                    Console.WriteLine($"Failed to fetch release for {releaseInfo.Tag}. Status code: {releaseResponse.StatusCode}");
-                    return savedFiles;
+                    await assetResponse.Content.CopyToAsync(fileStream);
                 }
 
-                var releaseJson = await releaseResponse.Content.ReadAsStringAsync();
-                var release = JObject.Parse(releaseJson);
+                Console.WriteLine($"Downloaded and saved {assetName} to {filePath}");
+                savedFiles.Add(filePath);
 
-                // Step 2: Extract assets array and download each asset
-                var assets = release["assets"] as JArray;
-                if (assets == null || assets.Count == 0)
-                {
-                    Console.WriteLine("No assets found for this release.");
-                    return savedFiles;
-                }
-
-                foreach (var asset in assets)
-                {
-                    string assetName = asset["name"]?.ToString();
-                    string downloadUrl = asset["browser_download_url"]?.ToString();
-
-                    if (string.IsNullOrEmpty(downloadUrl))
-                    {
-                        Console.WriteLine($"No download URL found for asset {assetName}");
-                        continue;
-                    }
-
-                    // Download the asset file
-                    var assetResponse = await _httpClient.GetAsync(downloadUrl);
-                    if (!assetResponse.IsSuccessStatusCode)
-                    {
-                        Console.WriteLine($"Failed to download asset {assetName}. Status code: {assetResponse.StatusCode}");
-                        continue;
-                    }
-
-                    // Save the file to the Temp folder
-                    string filePath = Path.Combine(tempFolder, assetName);
-                    await using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
-                    {
-                        await assetResponse.Content.CopyToAsync(fileStream);
-                    }
-
-                    Console.WriteLine($"Downloaded and saved {assetName} to {filePath}");
-                    savedFiles.Add(filePath);
-                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"An error occurred: {ex.Message}");
+                Console.WriteLine($"Error An error occurred: {ex.Message}");
             }
 
             return savedFiles;
@@ -236,9 +215,9 @@ namespace RGS_Installer_Console
 
         
 
-        private static async void InstallCommand(string installetionPath, string gitRepo)
+        private static async void InstallCommand(string installetionPath, string downloadUrl)
         {
-            await InstallLatestReleaseAsync(installetionPath, gitRepo);
+            //await InstallReleaseInFolder(downloadUrl,INSTALLER_TAG,);
             Console.ReadKey();
         }
         public static async Task InstallLatestReleaseAsync(string path, string repoName)
