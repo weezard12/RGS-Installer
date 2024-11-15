@@ -128,6 +128,12 @@ namespace RGS_Installer_Console
         }
 
 
+        private static async void InstallReleaseIcon(ReleaseInfo releaseInfo)
+        {
+            await InstallReleaseInFolder(releaseInfo,"icon.png","/RGS Installer/Icons");
+            File.Move("icon.png", releaseInfo.Name);
+        }
+
         private static async Task<List<string>> InstallReleaseInFolder(ReleaseInfo releaseInfo, string assetName, string installPath)
         {
             return await InstallReleaseInFolder(releaseInfo.URL,releaseInfo.Tag, assetName, installPath);
