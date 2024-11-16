@@ -37,7 +37,11 @@
                     </Border.Background>
 
                     <Button Grid.Column="0" Grid.Row="0" Margin="-10" BorderThickness="0" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Image Source="pack://application:,,,/weezard.png" Stretch="Uniform" ClipToBounds="True"/>
+                        <Image x:Name="AppImage" Source="/weezard.png" Stretch="Uniform" ClipToBounds="True">
+                            <Image.Effect>
+                                <DropShadowEffect BlurRadius="20" Direction="270" />
+                            </Image.Effect>
+                        </Image>
                         <Button.Background>
                             <SolidColorBrush Color="Transparent"/>
                         </Button.Background>

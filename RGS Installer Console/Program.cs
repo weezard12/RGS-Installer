@@ -1,55 +1,74 @@
 ﻿
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Compression;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Security.Principal;
 using System.Text.Json;
-using static System.Net.Mime.MediaTypeNames;
+using System.Text.Json.Serialization;
+
 
 namespace RGS_Installer_Console
 {
     internal class Program
     {
         private static readonly string GITHUB_TOKEN = "";
-        private static readonly string INSTALLER_TAG = "rgs_installer";
+        private const string INSTALLER_TAG = "rgs_installer";
         private static readonly string USERNAME = "weezard12";
+
+        private const bool LoggingEnabled = false;
         // commands
         // install {repository_name}
+        // installicon {url} {name}
         // update {repository_name}
         // releases {username} - prints all of the urls to of the latest releases that have rgs_installer tag
         public static void Main(string[] args)
         {
-            //Console.WriteLine(args[0]);
-            //InstallCommand("C:\\Users\\User1\\AppData\\Local\\Temp\\RGS Installer", "weezard12/RGS-Manager");
-            //if(args.Length == 0)
-            //StartBasicSetup();
+            Console.Title = "RGS Installer Console";
+            
+            if(args.Length == 0)
+            {
+                StartBasicSetup();
+                Console.ReadLine();
+            }
+            else if (args[0] == "install")
+                InstallCommand(args[1], args[2]);
 
-            //CreateRGSFolder();
+            else if (args[0] == "releases")
+                GetReleases();
 
-            GetReleases();
+            else if (args[0] == "installicon")
+            {
+                Console.WriteLine(args[0] + " " + args[1] + " " + args[2]);
+                InstallReleaseIcon(args[1], args[2]);
+            }
+                
 
             Console.ReadLine();
+        }
+
+        private static async void InstallCommand(string installationPath, string downloadUrl)
+        {
+            CreateFolderIfDoesntExist(installationPath, true);
+            await InstallReleaseInFolder(downloadUrl,"rgs_installer", "publish.zip", installationPath, true);
+
+            //CreateFolderIfDoesntExist($"{installationPath}", true);
+            if(Directory.Exists("C:\\Program Files\\RGS\\Count Playtime"))
+                Directory.Delete("C:\\Program Files\\RGS\\Count Playtime");
+            ZipFile.ExtractToDirectory(installationPath, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"RGS"));
         }
 
         public static async void GetReleases()
         {
             ReleaseInfo[] allReleases = await GetAllReleasedRepos("weezard12");
-            foreach (var release in allReleases)
-            {
-                if(release.Tag == INSTALLER_TAG)
-                {
-                    Console.WriteLine(release.Name);
-                    Console.WriteLine(release.Description);
-                    Console.WriteLine(release.Date);
-                    Console.WriteLine(release.URL);
-                    
-                }
-                
-            }
+
+            Releases releases = new Releases() { ReleasesInfos = allReleases };
+
+            Console.WriteLine(JsonSerializer.Serialize<Releases>(releases));
+            Environment.Exit(0);
                 
         }
+
 
         private static async Task<ReleaseInfo[]> GetAllReleasedRepos(string username)
         {
@@ -102,6 +121,7 @@ namespace RGS_Installer_Console
                         var releaseInfo = new ReleaseInfo
                         {
                             Name = release["name"]?.ToString(),
+                            RepoName = repoName,
                             Description = release["body"]?.ToString(),
                             URL = release["html_url"]?.ToString(),
                             Tag = release["tag_name"]?.ToString(),
@@ -127,31 +147,39 @@ namespace RGS_Installer_Console
 
         }
 
-
         private static async void InstallReleaseIcon(ReleaseInfo releaseInfo)
         {
-            await InstallReleaseInFolder(releaseInfo,"icon.png","/RGS Installer/Icons");
-            File.Move("icon.png", releaseInfo.Name);
+            InstallReleaseIcon(releaseInfo.Name, releaseInfo.URL, releaseInfo.Tag);
+        }
+        private static async void InstallReleaseIcon(string releaseName, string releaseUrl, string installerTag = INSTALLER_TAG)
+        {
+            string iconsPath = Path.Combine(Path.GetTempPath(), $"RGS Installer\\Icons\\{releaseName}.png");
+
+            CreateFolderIfDoesntExist(iconsPath, true);
+            await InstallReleaseInFolder(releaseUrl, installerTag, "icon.png", iconsPath, true);
+
+            Environment.Exit(0);
         }
 
-        private static async Task<List<string>> InstallReleaseInFolder(ReleaseInfo releaseInfo, string assetName, string installPath)
+
+        private static async Task<List<string>> InstallReleaseInFolder(ReleaseInfo releaseInfo, string assetName, string installPath, bool usePathAsFileName = false)
         {
-            return await InstallReleaseInFolder(releaseInfo.URL,releaseInfo.Tag, assetName, installPath);
+            return await InstallReleaseInFolder(releaseInfo.URL,releaseInfo.Tag, assetName, installPath, usePathAsFileName);
         }
-        private static async Task<List<string>> InstallReleaseInFolder(string releaseURL, string releaseTag, string assetName, string installPath)
+        private static async Task<List<string>> InstallReleaseInFolder(string releaseURL, string releaseTag, string assetName, string installPath, bool usePathAsFileName = false)
         {
             HttpClient _httpClient = new HttpClient();
 
             var savedFiles = new List<string>();
-            string tempFolder = Path.Combine(Path.GetTempPath(), installPath);
 
+            Log("Log Installing in path:" + installPath);
             try
             {
                 // Load the GitHub token from environment variable
                 string token = GITHUB_TOKEN;
                 if (string.IsNullOrEmpty(token))
                 {
-                    Console.WriteLine("Error GitHub token not found. Please set the GITHUB_TOKEN environment variable.");
+                    Log("Error GitHub token not found. Please set the GITHUB_TOKEN environment variable.");
                     return savedFiles;
                 }
 
@@ -167,20 +195,19 @@ namespace RGS_Installer_Console
                     Console.WriteLine($"Error Failed to download asset {assetName}. Status code: {assetResponse.StatusCode}");
 
 
-                // Save the file to the Temp folder
-                string filePath = Path.Combine(tempFolder, assetName);
+                string filePath = usePathAsFileName ? installPath :  Path.Combine(installPath, assetName);
                 await using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     await assetResponse.Content.CopyToAsync(fileStream);
                 }
 
-                Console.WriteLine($"Downloaded and saved {assetName} to {filePath}");
+                Log($"Log Downloaded and saved {assetName} to {filePath}");
                 savedFiles.Add(filePath);
 
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error An error occurred: {ex.Message}");
+                Log($"Error An error occurred: {ex.Message}");
             }
 
             return savedFiles;
@@ -197,175 +224,61 @@ namespace RGS_Installer_Console
                 return;
             }
             Console.WriteLine("Starting Setup...");
-            if (!IsGitInstalled())
-            {
-                await InstallLatestGit();
-            }
         }
         private static void CreateRGSFolder()
         {
             string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
-            string newFolderName = "RGS Studios";
-            string newFolderPath = Path.Combine(userDirectory, newFolderName);
-
-            
+            string newFolderPath = Path.Combine(userDirectory, "RGS");
             Directory.CreateDirectory(newFolderPath);
             
-            Console.WriteLine($"Folder created at: {newFolderPath}");
         }
 
-        #endregion
-
-        #region Install
-
-        
-
-        private static async void InstallCommand(string installetionPath, string downloadUrl)
+        private static void CreateFolderIfDoesntExist(string path, bool clearDirectory = false)
         {
-            //await InstallReleaseInFolder(downloadUrl,INSTALLER_TAG,);
-            Console.ReadKey();
-        }
-        public static async Task InstallLatestReleaseAsync(string path, string repoName)
-        {
-            Console.WriteLine("Starting Intallesion");
+            //just in case
+            if (path.Equals("Program Files") || Path.GetDirectoryName(path).Equals("C:\\") || path.Length < 15)
+            
+                return;
+            
+            Log("Log Creating path " + path);
             try
             {
-                // Ensure the target path exists
-                if (!Directory.Exists(path))
+                //if the path is to a file it will call the method again but with the file folder as path
+                if (Path.HasExtension(path))
                 {
-                    Directory.CreateDirectory(path);
-                }
-
-                Console.WriteLine("Directory Is Valid");
-
-                // Get the latest release tag from GitHub API
-                string latestTag = await GetLatestReleaseTagAsync(repoName);
-                Console.WriteLine("latest tag: "+ latestTag);
-                if (string.IsNullOrEmpty(latestTag))
-                {
-                    Console.WriteLine("Could not find the latest release tag.");
+                    CreateFolderIfDoesntExist(Path.GetDirectoryName(path), clearDirectory);
                     return;
                 }
 
-                // Clone the specific release using Git
-                string gitCloneCommand = $"clone --branch {latestTag} https://github.com/{repoName}.git \"{path}\"";
-                RunGitCommand(gitCloneCommand);
-                Console.WriteLine($"Latest release '{latestTag}' of '{repoName}' has been installed to '{path}'");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-            }
-        }
-
-        private static async Task<string> GetLatestReleaseTagAsync(string repoName)
-        {
-            try
-            {
-                using HttpClient client = new HttpClient();
-
-                // Set the User-Agent header required by GitHub API
-                client.DefaultRequestHeaders.UserAgent.ParseAdd("CSharp-App");
-
-                string apiUrl = $"https://api.github.com/repos/{repoName}/releases/latest";
-                HttpResponseMessage response = await client.GetAsync(apiUrl);
-
-                // Check if the response was successful
-                if (!response.IsSuccessStatusCode)
+                if (!Directory.Exists(path))
                 {
-                    Console.WriteLine($"Failed to fetch the latest release information. Status Code: {response.StatusCode}");
-                    string errorMessage = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine("Error message: " + errorMessage);
-                    return null;
+                    Directory.CreateDirectory(path);
+                    return;
                 }
-
-                // Parse the JSON response to retrieve the tag name
-                string jsonResponse = await response.Content.ReadAsStringAsync();
-                JsonDocument jsonDoc = JsonDocument.Parse(jsonResponse);
-                string tagName = jsonDoc.RootElement.GetProperty("tag_name").GetString();
-                return tagName;
-            }
-            catch (HttpRequestException httpEx)
-            {
-                Console.WriteLine("HTTP request error: " + httpEx.Message);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred: " + ex.Message);
-                return null;
-            }
-        }
-
-        static async Task InstallLatestGit()
-        {
-            string gitInstallerUrl = "https://github.com/git-for-windows/git/releases/latest/download/Git-x64.exe";
-            string installerPath = Path.Combine(Path.GetTempPath(), "GitInstaller.exe");
-
-            // Download Git installer
-            Console.WriteLine("Downloading Git installer...");
-            using (HttpClient client = new HttpClient())
-            {
-                var response = await client.GetAsync(gitInstallerUrl);
-                response.EnsureSuccessStatusCode();
-
-                await using var fs = new FileStream(installerPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                await response.Content.CopyToAsync(fs);
-            }
-
-            // Run the installer in silent mode
-            Console.WriteLine("Running Git installer...");
-            Process installProcess = new Process
-            {
-                StartInfo = new ProcessStartInfo
+                if (clearDirectory)
                 {
-                    FileName = installerPath,
-                    Arguments = "/SILENT",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
+                    Directory.Delete(path, true);
+                    Directory.CreateDirectory(path);
                 }
-            };
-
-            installProcess.Start();
-            installProcess.WaitForExit();
-
-            if (installProcess.ExitCode == 0)
-            {
-                Console.WriteLine("Git installation completed successfully.");
-
-                // Verify Git installation
-                Process verifyProcess = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = "git",
-                        Arguments = "--version",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    }
-                };
-
-                verifyProcess.Start();
-                string output = await verifyProcess.StandardOutput.ReadToEndAsync();
-                verifyProcess.WaitForExit();
-
-                Console.WriteLine("Git Version: " + output);
             }
-            else
+            catch
             {
-                Console.WriteLine("Git installation failed.");
-                Console.WriteLine(await installProcess.StandardError.ReadToEndAsync());
+                Log($@"Error The path ""{path}"" does not exists and returned an error");
+                Log($@"Log Trying again...");
+                try
+                {
+                    Directory.CreateDirectory(path);
+                }
+                catch
+                {
+                    File.Delete(path);
+                    CreateFolderIfDoesntExist(path, clearDirectory);
+                }
+                
+                
             }
         }
-
-
-        
-    
         #endregion
 
         #region Checks
@@ -414,89 +327,41 @@ namespace RGS_Installer_Console
             }
         #endregion
 
-        public static async Task<string[]> FilterReleasesByTag(string[] releaseUrls, string tagName)
+        private static void Log(string message)
         {
-            HttpClient _httpClient = new HttpClient();
-
-            var filteredReleaseUrls = new List<string>();
-
-            foreach (var releaseUrl in releaseUrls)
-            {
-                try
-                {
-                    // GitHub API for release metadata using the release URL
-                    var releaseResponse = await _httpClient.GetAsync(releaseUrl);
-
-                    if (releaseResponse.IsSuccessStatusCode)
-                    {
-                        var releaseJson = await releaseResponse.Content.ReadAsStringAsync();
-                        var release = JObject.Parse(releaseJson);
-
-                        // Check if the release's tag_name matches the specified tag
-                        string tag = release["tag_name"]?.ToString();
-
-                        if (tag == tagName)
-                        {
-                            filteredReleaseUrls.Add(releaseUrl);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error failed to fetch or parse release at {releaseUrl}: {ex.Message}");
-                }
-            }
-
-            return filteredReleaseUrls.ToArray();
+            if (!LoggingEnabled)
+                return;
+            Console.WriteLine(message);
         }
-        private static void RunGitCommand(string arguments)
+        private class Releases
         {
-            Console.WriteLine("Git command: " + arguments);
-            ProcessStartInfo processInfo = new ProcessStartInfo
-            {
-                FileName = "git",
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using Process process = Process.Start(processInfo);
-            process.OutputDataReceived += (sender, args) => Console.WriteLine(args.Data);
-            process.ErrorDataReceived += (sender, args) => Console.WriteLine(args.Data);
-
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-            {
-                throw new Exception("Git command failed to execute.");
-            }
+            [JsonPropertyName("releases_infos")]
+            public ReleaseInfo[] ReleasesInfos { get; set; }
         }
-
-        // installer info.txt
-        // name
-        // version
-        // release date
-        // grediant bkg start
-        // grediant bkg end
-        // grediant image start
-        // grediant image end
 
         private class ReleaseInfo
         {
+            [JsonPropertyName("name")]
             public string Name { get; set; }
+
+            [JsonPropertyName("repo_name")]
+            public string RepoName { get; set; }
+
+            [JsonPropertyName("description")]
             public string Description { get; set; }
+
+            [JsonPropertyName("url")]
             public string URL { get; set; }
+
+            [JsonPropertyName("tag")]
             public string Tag { get; set; }
+
+            [JsonPropertyName("date")]
             public string Date { get; set; }
 
             public override string ToString()
             {
-                return string.Format("Name: {0}\n URL: {1}\n Tag: {2}\n Date: {3}\n Description: {4}", Name,URL,Tag,Date,Description);
-
+                return string.Format("Name: {0}\n Repo Name: {1} \n URL: {2}\n Tag: {3}\n Date: {4}\n Description: {5}", Name, RepoName,URL,Tag,Date,Description);
             }
         }
     }
