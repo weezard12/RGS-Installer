@@ -64,7 +64,12 @@ namespace RGS_Installer
                 if (appImage != null)
                 {
                     AppImage.Source = appImage;
+                    GradientColor gradientColor = GradientColor.GetBestGradient(GradientColor.GetDominantColors(appImage));
+                    FirstImageColor.Color = gradientColor.FirstColor;
+                    SecondImageColor.Color = gradientColor.SecondColor;
                 }
+
+
             });
 
 
@@ -89,6 +94,11 @@ namespace RGS_Installer
             {
                 return null;
             }
+        }
+
+        private void Install_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            MainWindow.UseInstallerConsole("install","");
         }
 
         public class Releases
@@ -122,5 +132,7 @@ namespace RGS_Installer
                 return string.Format("Name: {0}\n Repo Name: {1} \n URL: {2}\n Tag: {3}\n Date: {4}\n Description: {5}", Name, RepoName, URL, Tag, Date, Description);
             }
         }
+
+
     }
 }

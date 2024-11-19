@@ -70,5 +70,36 @@ namespace RGS_Installer
             Application.Current.Shutdown();
         }
         
+        public static string UseInstallerConsole(params string[] args)
+        {
+            string argsText = String.Empty;
+            foreach (string arg in args)
+            {
+                argsText += arg + " ";
+            }
+            argsText.Substring(0, argsText.Length - 1);
+            
+            ProcessStartInfo processInfo = new ProcessStartInfo
+            {
+                FileName = MainWindow.InstallerConsolePath,
+                Arguments = argsText,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = false,
+            };
+            string consoleOutput;
+
+            using (Process process = new Process())
+            {
+                process.StartInfo = processInfo;
+                process.Start();
+
+                consoleOutput = process.StandardOutput.ReadToEnd();
+
+                process.WaitForExit();
+            };
+            return consoleOutput;
+        }
     }
 }
