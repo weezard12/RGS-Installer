@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -22,33 +23,10 @@ namespace RGS_Installer
         }
 
         public void RefreshAvilableApps()
-        {
-            ProcessStartInfo processInfo = new ProcessStartInfo
-            {
-                FileName = InstallerConsolePath,
-                Arguments = "releases",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = false,
-            };
-
-            string consoleOutput;
-
-            using (Process process = new Process())
-            {
-                process.StartInfo = processInfo;
-                process.Start();
-
-                consoleOutput = process.StandardOutput.ReadToEnd();
-
-                process.WaitForExit();
-            };
-            
-
+        {   
             AppsPanel.Children.Clear();
             
-            Releases releases = JsonSerializer.Deserialize<Releases>(consoleOutput);
+            Releases releases = JsonSerializer.Deserialize<Releases>(UseInstallerConsole("releases"));
             foreach(ReleaseInfo release in releases.ReleasesInfos)
             AppsPanel.Children.Add(new SelectApp(release));
         }
@@ -78,27 +56,43 @@ namespace RGS_Installer
                 argsText += arg + " ";
             }
             argsText.Substring(0, argsText.Length - 1);
+
+
+            string consoleOutput = String.Empty;
+            try
+            {
+                ProcessStartInfo processInfo = new ProcessStartInfo
+                {
+                    FileName = MainWindow.InstallerConsolePath,
+                    Arguments = argsText,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = false,
+                };
+                
+
+                using (Process process = new Process())
+                {
+                    process.StartInfo = processInfo;
+                    process.Start();
+
+                    consoleOutput = process.StandardOutput.ReadToEnd();
+
+                    process.WaitForExit();
+                };
+            }
+            catch (Exception ex)
+            {
+                if(ex is Win32Exception)
+                {
+
+                }
+
+                MessageBox.Show(ex.ToString());
+            }
+
             
-            ProcessStartInfo processInfo = new ProcessStartInfo
-            {
-                FileName = MainWindow.InstallerConsolePath,
-                Arguments = argsText,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = false,
-            };
-            string consoleOutput;
-
-            using (Process process = new Process())
-            {
-                process.StartInfo = processInfo;
-                process.Start();
-
-                consoleOutput = process.StandardOutput.ReadToEnd();
-
-                process.WaitForExit();
-            };
             return consoleOutput;
         }
     }

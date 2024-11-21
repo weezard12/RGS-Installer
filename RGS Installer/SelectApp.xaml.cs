@@ -98,7 +98,8 @@ namespace RGS_Installer
 
         private void Install_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            MainWindow.UseInstallerConsole("install","");
+            //MainWindow.UseInstallerConsole("install","");
+            new SelectInstallPath(this).ShowDialog();
         }
 
         public class Releases

@@ -34,8 +34,11 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Content="C:\" />
-                <Button Grid.Column="2" Content="Install" Margin="0"/>
+                <Button Grid.Column="0" Click="Path_Click" >
+                    
+                </Button>
+                <Label Content="C:\" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                <Button Grid.Column="2" Click="Install_Click" Content="Install" Margin="0" />
             </Grid>
         </Grid>
     </Grid>

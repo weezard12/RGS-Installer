@@ -25,8 +25,7 @@ namespace RGS_Installer_Console
         public static void Main(string[] args)
         {
             Console.Title = "RGS Installer Console";
-            
-            if(args.Length == 0)
+            if (args.Length == 0)
             {
                 StartBasicSetup();
                 Console.ReadLine();
@@ -224,14 +223,23 @@ namespace RGS_Installer_Console
                 return;
             }
             Console.WriteLine("Starting Setup...");
+
+            CreateRGSFolder();
         }
         private static void CreateRGSFolder()
         {
             string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
-            string newFolderPath = Path.Combine(userDirectory, "RGS");
-            Directory.CreateDirectory(newFolderPath);
-            
+            string newFolderPath = Path.Combine(userDirectory, "RGS\\Installer");
+
+            CreateFolderIfDoesntExist(newFolderPath);
+
+            newFolderPath = Path.Combine(newFolderPath, "RGS Installer Console.exe");
+
+            if (!)
+            {
+                File.Copy();
+            }
         }
 
         private static void CreateFolderIfDoesntExist(string path, bool clearDirectory = false)

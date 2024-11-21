@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Microsoft.Win32;
 
 namespace RGS_Installer
 {
@@ -19,9 +20,23 @@ namespace RGS_Installer
     /// </summary>
     public partial class SelectInstallPath : Window
     {
-        public SelectInstallPath()
+        private SelectApp _appToInstall;
+        public SelectInstallPath(SelectApp appToInstall)
         {
             InitializeComponent();
+
+            _appToInstall = appToInstall;
+        }
+
+        private void Install_Click(object sender, RoutedEventArgs e)
+        {
+            MainWindow.UseInstallerConsole("install","");
+        }
+
+        private void Path_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.ShowDialog();
         }
     }
 }
