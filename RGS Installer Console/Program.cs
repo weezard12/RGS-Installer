@@ -213,7 +213,7 @@ namespace RGS_Installer_Console
         }
 
         #region BasicSetup
-        private static async void StartBasicSetup()
+        private static void StartBasicSetup()
         {
             Console.WriteLine("Welcome to RGS Installer Console!");
             Console.WriteLine("This is the non UI application for installing RGS apps easelly.");
@@ -234,12 +234,18 @@ namespace RGS_Installer_Console
 
             CreateFolderIfDoesntExist(newFolderPath);
 
-            newFolderPath = Path.Combine(newFolderPath, "RGS Installer Console.exe");
+            string consolePath = Path.Combine(newFolderPath, "RGS Installer Console.exe");
 
-            if (!)
+            if (!File.Exists(consolePath))
+                File.Copy(Path.Combine(AppContext.BaseDirectory, "RGS Installer Console.exe"), consolePath);
+
+            string jsonPath = Path.Combine(newFolderPath, "Apps.json");
+            if (!File.Exists(jsonPath))
             {
-                File.Copy();
+                File.Create(jsonPath);
+                //File.WriteAllText(jsonPath, "apps{}");
             }
+            InstallReleaseInFolder("","rgs_installer","publish.zip",newFolderPath);
         }
 
         private static void CreateFolderIfDoesntExist(string path, bool clearDirectory = false)
