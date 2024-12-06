@@ -16,7 +16,7 @@ namespace RGS_Installer_Console
         private const string INSTALLER_TAG = "rgs_installer";
         private static readonly string USERNAME = "weezard12";
 
-        private const bool LoggingEnabled = false;
+        private const bool LoggingEnabled = true;
         // commands
         // install {repository_name}
         // installicon {url} {name}
@@ -24,11 +24,24 @@ namespace RGS_Installer_Console
         // releases {username} - prints all of the urls to of the latest releases that have rgs_installer tag
         public static void Main(string[] args)
         {
-            Console.Title = "RGS Installer Console";
+            // creates and clears the logging file
+            if (LoggingEnabled)
+            {
+                string logFilePath = Path.Combine(Path.GetTempPath(), "RGS Installer\\rgs_installer_log.txt");
+                try
+                {
+                    File.WriteAllLines(logFilePath, new string[0]);
+                }
+                catch (Exception ex)
+                {
+                }
+            }
+            
+            // commands
             if (args.Length == 0)
             {
+                Console.Title = "RGS Installer Console";
                 StartBasicSetup();
-                Console.ReadLine();
             }
             else if (args[0] == "install")
                 InstallCommand(args[1], args[2]);
@@ -38,23 +51,54 @@ namespace RGS_Installer_Console
 
             else if (args[0] == "installicon")
             {
-                Console.WriteLine(args[0] + " " + args[1] + " " + args[2]);
+                //Console.WriteLine(args[0] + " " + args[1] + " " + args[2]);
                 InstallReleaseIcon(args[1], args[2]);
             }
-                
-
+            else
+                Console.WriteLine("Error Invalid args");
             Console.ReadLine();
         }
 
-        private static async void InstallCommand(string installationPath, string downloadUrl)
+        private static async void InstallCommand(string installationPath, string downloadUrl, Action doAfterInstall = null)
         {
-            CreateFolderIfDoesntExist(installationPath, true);
-            await InstallReleaseInFolder(downloadUrl,"rgs_installer", "publish.zip", installationPath, true);
+            string tempInstallPath = Path.Combine(Path.GetTempPath(), "RGS Installer\\Download");
+            CreateFolderIfDoesntExist(tempInstallPath, true);
 
-            //CreateFolderIfDoesntExist($"{installationPath}", true);
-            if(Directory.Exists("C:\\Program Files\\RGS\\Count Playtime"))
-                Directory.Delete("C:\\Program Files\\RGS\\Count Playtime");
-            ZipFile.ExtractToDirectory(installationPath, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),"RGS"));
+            await InstallReleaseInFolder(downloadUrl,"rgs_installer", "publish.zip", tempInstallPath, false);
+            try
+            {
+                ZipFile.ExtractToDirectory(Path.Combine(tempInstallPath, "publish.zip"), installationPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "RGS\\RGS Installer\\Apps.json");
+            Apps apps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
+
+            List<InstalledApp> installedApps;
+            if (apps == null)
+                installedApps = apps.InstalledApps.ToList();
+            else
+                installedApps = new List<InstalledApp>();
+
+            installedApps.Add(new InstalledApp()
+            {
+                Name = GetRepoNameFromURL(downloadUrl),
+                Path = installedAppsPath,
+                LastUpdate= DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                RepoURL = downloadUrl
+            });
+
+            apps.InstalledApps = installedApps.ToArray();
+
+            File.WriteAllText(installedAppsPath, JsonSerializer.Serialize<Apps>(apps));
+
+            //invokes optional code before closing the console
+            doAfterInstall?.Invoke();
+
+            Environment.Exit(0);
         }
 
         public static async void GetReleases()
@@ -64,8 +108,8 @@ namespace RGS_Installer_Console
             Releases releases = new Releases() { ReleasesInfos = allReleases };
 
             Console.WriteLine(JsonSerializer.Serialize<Releases>(releases));
+
             Environment.Exit(0);
-                
         }
 
 
@@ -191,7 +235,7 @@ namespace RGS_Installer_Console
                 // Download the asset file
                 var assetResponse = await _httpClient.GetAsync(downloadUrl);
                 if (!assetResponse.IsSuccessStatusCode)
-                    Console.WriteLine($"Error Failed to download asset {assetName}. Status code: {assetResponse.StatusCode}");
+                    Console.WriteLine($"Error Failed to download asset {assetName}. Status code: {assetResponse.StatusCode}. Download URL: {downloadUrl}");
 
 
                 string filePath = usePathAsFileName ? installPath :  Path.Combine(installPath, assetName);
@@ -225,12 +269,15 @@ namespace RGS_Installer_Console
             Console.WriteLine("Starting Setup...");
 
             CreateRGSFolder();
+
+
+
         }
-        private static void CreateRGSFolder()
+        private static async void CreateRGSFolder()
         {
             string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
 
-            string newFolderPath = Path.Combine(userDirectory, "RGS\\Installer");
+            string newFolderPath = Path.Combine(userDirectory, "RGS\\RGS Installer");
 
             CreateFolderIfDoesntExist(newFolderPath);
 
@@ -242,17 +289,31 @@ namespace RGS_Installer_Console
             string jsonPath = Path.Combine(newFolderPath, "Apps.json");
             if (!File.Exists(jsonPath))
             {
-                File.Create(jsonPath);
-                //File.WriteAllText(jsonPath, "apps{}");
+                string jsonContent =
+@"{
+    ""installed_apps"": [
+    ]
+}";
+                File.WriteAllText(jsonPath, jsonContent);
+                
             }
-            InstallReleaseInFolder("","rgs_installer","publish.zip",newFolderPath);
+            InstallCommand(newFolderPath, "https://github.com/weezard12/RGS-Installer/releases/tag/rgs_installer",
+                new Action(() =>
+                {
+                    ProcessStartInfo psi = new ProcessStartInfo
+                    {
+                        FileName = Path.Combine(newFolderPath, "RGS Installer\\RGS Installer.exe"),
+                        UseShellExecute = false,
+                        CreateNoWindow = false,
+                    };
+                    Process.Start(psi);
+                }));
         }
 
         private static void CreateFolderIfDoesntExist(string path, bool clearDirectory = false)
         {
             //just in case
             if (path.Equals("Program Files") || Path.GetDirectoryName(path).Equals("C:\\") || path.Length < 15)
-            
                 return;
             
             Log("Log Creating path " + path);
@@ -341,18 +402,53 @@ namespace RGS_Installer_Console
             }
         #endregion
 
+        #region Utils
         private static void Log(string message)
         {
             if (!LoggingEnabled)
                 return;
-            Console.WriteLine(message);
+
+            string tempFolder = Path.GetTempPath();
+            string logFilePath = Path.Combine(tempFolder, "RGS Installer\\rgs_installer_log.txt");
+            try
+            {
+                // Write the log message to the file
+                File.AppendAllText(logFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
+            }
+            catch (Exception ex)
+            {
+                // Handle potential exceptions (e.g., lack of write permission)
+                CreateFolderIfDoesntExist(logFilePath);
+            }
         }
+
+        private static string GetRepoNameFromURL(string url)
+        {
+            if (string.IsNullOrEmpty(url))
+                throw new ArgumentException("URL cannot be null or empty", nameof(url));
+
+            Uri uri = new Uri(url);
+            var segments = uri.Segments;
+
+            if (segments.Length < 3)
+                throw new FormatException("Invalid GitHub release URL format.");
+
+            string repoName = segments[1].TrimEnd('/');
+            return repoName;
+        }
+
+        
+        #endregion
+
+        #region jsons
+        // json for array of releases
         private class Releases
         {
             [JsonPropertyName("releases_infos")]
             public ReleaseInfo[] ReleasesInfos { get; set; }
         }
 
+        // json of a release
         private class ReleaseInfo
         {
             [JsonPropertyName("name")]
@@ -378,5 +474,28 @@ namespace RGS_Installer_Console
                 return string.Format("Name: {0}\n Repo Name: {1} \n URL: {2}\n Tag: {3}\n Date: {4}\n Description: {5}", Name, RepoName,URL,Tag,Date,Description);
             }
         }
+
+
+        // json for arry of installed apps
+        private class Apps
+        {
+            [JsonPropertyName("apps")]
+            public InstalledApp[] InstalledApps { get; set; }
+        }
+
+        // json of an installed app
+        private class InstalledApp
+        {
+            [JsonPropertyName("name")]
+            public string Name { get; set; }
+            [JsonPropertyName("path")]
+            public string Path { get; set; }
+            [JsonPropertyName("last_update")]
+            public string LastUpdate { get; set; }
+            [JsonPropertyName("repo")]
+            public string RepoURL { get; set; }
+        }
+
+        #endregion
     }
 }

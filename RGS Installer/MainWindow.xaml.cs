@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using static RGS_Installer.SelectApp;
 
 
@@ -14,10 +15,15 @@ namespace RGS_Installer
     public partial class MainWindow : Window
     {
         public static readonly string InstallerConsolePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "RGS\\RGS Installer\\RGS Installer Console.exe");
+
+        public static MainWindow Instance;
+
+        public static Stack<Window> DialogWindows { get; set; } = new Stack<Window>();
+
         public MainWindow()
         {
             InitializeComponent();
-            //MainFrame.Navigate(new MainSelectionPage());
+            Instance = this;
 
             RefreshAvilableApps();
         }
@@ -25,23 +31,17 @@ namespace RGS_Installer
         public void RefreshAvilableApps()
         {   
             AppsPanel.Children.Clear();
+
+            string jsonFile = UseInstallerConsole("releases");
+            if (jsonFile == "")
+                return;
             
-            Releases releases = JsonSerializer.Deserialize<Releases>(UseInstallerConsole("releases"));
+            Releases releases = JsonSerializer.Deserialize<Releases>(jsonFile);
             foreach(ReleaseInfo release in releases.ReleasesInfos)
             AppsPanel.Children.Add(new SelectApp(release));
         }
 
         private SelectApp[] ConvertConsoleOutputToApp;
-
-        // Handles mouse drag to move the window
-        private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            // Start dragging the window when the user clicks anywhere on the window
-            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
-            {
-                this.DragMove();
-            }
-        }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
@@ -94,6 +94,26 @@ namespace RGS_Installer
 
             
             return consoleOutput;
+        }
+
+
+        // Handles mouse drag to move the window
+        private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Start dragging the window when the user clicks anywhere on the window
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                this.DragMove();
+            }
+        }
+
+        // Handles mouse down for canceling dialogs
+        private void Window_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            while(DialogWindows.Count != 0)
+            {
+                DialogWindows.Pop().Close();
+            }
         }
     }
 }

@@ -2,9 +2,9 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json.Serialization;
-
+using System.Windows;
 using System.Windows.Controls;
-
+using System.Windows.Controls.Primitives;
 using System.Windows.Media.Imaging;
 
 
@@ -39,7 +39,7 @@ namespace RGS_Installer
             ProcessStartInfo processInfo = new ProcessStartInfo
             {
                 FileName = MainWindow.InstallerConsolePath,
-                Arguments = $@"installicon ""{_releaseInfo.URL}"" ""{_releaseInfo.Name}""",
+                Arguments = $@"installicon ""{_releaseInfo.Name}"" ""{_releaseInfo.URL}""",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -63,7 +63,10 @@ namespace RGS_Installer
 
                 if (appImage != null)
                 {
+                    // sets the app image
                     AppImage.Source = appImage;
+
+                    //sets the image background gradient
                     GradientColor gradientColor = GradientColor.GetBestGradient(GradientColor.GetDominantColors(appImage));
                     FirstImageColor.Color = gradientColor.FirstColor;
                     SecondImageColor.Color = gradientColor.SecondColor;
@@ -99,7 +102,21 @@ namespace RGS_Installer
         private void Install_Click(object sender, System.Windows.RoutedEventArgs e)
         {
             //MainWindow.UseInstallerConsole("install","");
-            new SelectInstallPath(this).ShowDialog();
+            SelectInstallPath selectPathDialog = new SelectInstallPath(this)
+            {
+                WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
+                Owner = MainWindow.Instance,
+            };
+            MainWindow.DialogWindows.Push(selectPathDialog);
+            selectPathDialog.Show();
+            selectPathDialog.Focus();
+            
+        }
+
+        public void InstallApp(string installPath)
+        {
+            MessageBox.Show(_releaseInfo.URL);
+            MainWindow.UseInstallerConsole("install", installPath, _releaseInfo.URL);
         }
 
         public class Releases

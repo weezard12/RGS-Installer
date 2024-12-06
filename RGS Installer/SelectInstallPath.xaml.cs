@@ -21,22 +21,47 @@ namespace RGS_Installer
     public partial class SelectInstallPath : Window
     {
         private SelectApp _appToInstall;
+
+        private string _installPath;
+
         public SelectInstallPath(SelectApp appToInstall)
         {
             InitializeComponent();
 
+            this.ShowInTaskbar = false;
             _appToInstall = appToInstall;
         }
 
         private void Install_Click(object sender, RoutedEventArgs e)
         {
-            MainWindow.UseInstallerConsole("install","");
+            _appToInstall.InstallApp(_installPath);
         }
 
         private void Path_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.ShowDialog();
+            OpenFolderDialog openFileDialog = new OpenFolderDialog();
+
+            bool? response = openFileDialog.ShowDialog();
+
+            if (response == true)
+                USetInstallPath(openFileDialog.FolderName);
+            
         }
+        private void USetInstallPath(string path)
+        {
+            _installPath = path;
+            PathText.Content = path;
+        }
+
+        // Handles mouse drag to move the window
+        private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            // Start dragging the window when the user clicks anywhere on the window
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                this.DragMove();
+            }
+        }
+        
     }
 }

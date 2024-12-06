@@ -9,37 +9,39 @@
         ResizeMode="NoResize"
         Background="Transparent"
         AllowsTransparency="True"
-        Title="SelectInstallPath" Height="100" Width="400">
+        Title="SelectInstallPath" Height="100" Width="400"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown"
+        >
     <Grid>
         <Border>
             <Border CornerRadius="20" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
-                        <GradientStop Color="#D8B5FF" Offset="0.1"/>
-                        <GradientStop Color="	#1EAE98" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-            </Border>
-        </Border>
-        <Grid Margin="10">
-            <Grid.RowDefinitions>
-                <RowDefinition/>
-                <RowDefinition/>
-            </Grid.RowDefinitions>
-            <Label Content="Installesion Path:" FontSize="15"/>
-            
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="8*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Button Grid.Column="0" Click="Path_Click" >
-                    
-                </Button>
-                <Label Content="C:\" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                <Button Grid.Column="2" Click="Install_Click" Content="Install" Margin="0" />
-            </Grid>
+    <GradientStop Color="#D8B5FF" Offset="0.1"/>
+    <GradientStop Color="	#1EAE98" Offset="1"/>
+    </LinearGradientBrush>
+    </Border.Background>
+    </Border>
+    </Border>
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Label Content="Installesion Path:" FontSize="15"/>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="8*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Click="Path_Click" >
+
+            </Button>
+            <Label x:Name="PathText" Content="C:\" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+            <Button Grid.Column="2" Click="Install_Click" Content="Install" Margin="0" />
         </Grid>
+    </Grid>
     </Grid>
 </Window>

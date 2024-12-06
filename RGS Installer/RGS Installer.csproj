@@ -15,6 +15,7 @@
 		<!-- or win-x86, linux-x64, etc. based on your target OS -->
 		<SelfContained>true</SelfContained>
 		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+		<ApplicationIcon>Assets\rgs_installer_icon128.ico</ApplicationIcon>
 	</PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Assets\" />
+    <Content Include="Assets\rgs_installer_icon128.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Main\" />
   </ItemGroup>
 
