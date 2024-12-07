@@ -19,6 +19,7 @@
 	</PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\rgs_installer_icon512.png" />
     <None Remove="weezard.png" />
   </ItemGroup>
 
@@ -35,6 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\rgs_installer_icon512.png" />
     <Resource Include="weezard.png" />
   </ItemGroup>
 

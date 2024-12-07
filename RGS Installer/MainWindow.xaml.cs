@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 using static RGS_Installer.SelectApp;
 
 
@@ -18,27 +19,57 @@ namespace RGS_Installer
 
         public static MainWindow Instance;
 
+        private static readonly StartIconWindow _startIconWindow = new StartIconWindow();
+
         public static Stack<Window> DialogWindows { get; set; } = new Stack<Window>();
 
         public MainWindow()
         {
             InitializeComponent();
-            Instance = this;
+            this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
 
-            RefreshAvilableApps();
+            Instance = this;
+            Hide();
+
+            _startIconWindow.Show();
+            _startIconWindow.Focus();
+
+            Thread setupThread = new Thread(SetupApp);
+            setupThread.Start();
+            //RefreshAvilableApps();
+/*            string jsonFile = UseInstallerConsole("releases");
+            RefreshAvilableApps(jsonFile);
+            startIconWindow.Close();
+            Focus();*/
+        }
+        public void SetupApp()
+        {
+            
+            string jsonFile = UseInstallerConsole("releases");
+            Dispatcher.Invoke(() =>
+            {
+                RefreshAvilableApps(jsonFile);
+                _startIconWindow.Close();
+
+                Show();
+                Focus();
+            });
         }
 
         public void RefreshAvilableApps()
         {   
-            AppsPanel.Children.Clear();
-
             string jsonFile = UseInstallerConsole("releases");
             if (jsonFile == "")
                 return;
-            
+
+            RefreshAvilableApps(jsonFile);
+        }
+        public void RefreshAvilableApps(string jsonFile)
+        {
+            AppsPanel.Children.Clear();
             Releases releases = JsonSerializer.Deserialize<Releases>(jsonFile);
-            foreach(ReleaseInfo release in releases.ReleasesInfos)
-            AppsPanel.Children.Add(new SelectApp(release));
+            foreach (ReleaseInfo release in releases.ReleasesInfos)
+                AppsPanel.Children.Add(new SelectApp(release));
         }
 
         private SelectApp[] ConvertConsoleOutputToApp;
@@ -68,7 +99,7 @@ namespace RGS_Installer
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
-                    CreateNoWindow = false,
+                    CreateNoWindow = true,
                 };
                 
 
