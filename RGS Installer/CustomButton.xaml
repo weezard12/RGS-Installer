@@ -1,0 +1,29 @@
+﻿<UserControl x:Class="RGS_Installer.CustomButton"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RGS_Installer"
+             mc:Ignorable="d"
+             d:DesignHeight="60" d:DesignWidth="200">
+    <Grid>
+        <Button x:Name="XmlCustomButton" Content="Custom Button" Click="Button_Click" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="30" Foreground="White" Width="Auto">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border CornerRadius="10"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="0">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Button.Template>
+            <Button.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="LightGreen" Offset="0.0" />
+                    <GradientStop Color="Green" Offset="1.0" />
+                </LinearGradientBrush>
+            </Button.Background>
+        </Button>
+    </Grid>
+</UserControl>

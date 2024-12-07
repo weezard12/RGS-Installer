@@ -18,11 +18,18 @@ namespace RGS_Installer
     /// <summary>
     /// Interaction logic for UserControl1.xaml
     /// </summary>
-    public partial class UserControl1 : UserControl
+    public partial class CustomButton : UserControl
     {
-        public UserControl1()
+        public Action OnClisckAction { get; set; }
+        public CustomButton(string text, Color leftColor, Color rightColor)
         {
             InitializeComponent();
+            XmlCustomButton.Content = text;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            OnClisckAction?.Invoke();
         }
     }
 }

@@ -87,8 +87,6 @@
                             <SolidColorBrush Color="#FF2F80ED"/>
                         </Button.BorderBrush>
                     </Button>
-                    <Button Content="Update" Grid.Row="1"/>
-                    <Button Content="Uninstall" Grid.Row="2"/>
                 </Grid>
                 
             </Grid>

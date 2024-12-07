@@ -86,7 +86,7 @@ namespace RGS_Installer_Console
             installedApps.Add(new InstalledApp()
             {
                 Name = GetRepoNameFromURL(downloadUrl),
-                Path = installedAppsPath,
+                Path = installationPath,
                 LastUpdate= DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 RepoURL = downloadUrl
             });
