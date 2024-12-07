@@ -123,7 +123,6 @@ namespace RGS_Installer
                 MessageBox.Show(ex.ToString());
             }
 
-            
             return consoleOutput;
         }
 

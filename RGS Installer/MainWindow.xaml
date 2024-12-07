@@ -11,8 +11,11 @@
         Background="Transparent"
         AllowsTransparency="True"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
-        MouseDown="Window_MouseDown"
-        >
+        MouseDown="Window_MouseDown">
+    <Window.Resources>
+
+    </Window.Resources>
+
     <Grid>
         <Border CornerRadius="30" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Border.Background>
@@ -28,9 +31,15 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             <Label Content="RGS INSTALLER" Grid.Row="0" FontSize="30" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Top"/>
-            <StackPanel x:Name="AppsPanel" Grid.Row="1" Margin="30,0,30,30">
+            <ScrollViewer Grid.Row="1" Margin="30,0,30,30">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer"/>
+                </ScrollViewer.Style>
                 
-            </StackPanel>
+                <StackPanel x:Name="AppsPanel">
+
+                </StackPanel>
+            </ScrollViewer>
         </Grid>
         <Grid Margin="10">
             <Grid.ColumnDefinitions>
@@ -53,13 +62,9 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Button Margin="8" Click="Exit_Click" Content="X" Grid.Column="0" Grid.Row="0" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="White" Background="Transparent" BorderThickness="0"/>
-                <ScrollBar Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-
-                </ScrollBar>
             </Grid>
 
         </Grid>
-        
         
     </Grid>
 </Window>

@@ -36,27 +36,8 @@ namespace RGS_Installer
             if (_releaseInfo.Tag != "rgs_installer")
                 return;
 
-            ProcessStartInfo processInfo = new ProcessStartInfo
-            {
-                FileName = MainWindow.InstallerConsolePath,
-                Arguments = $@"installicon ""{_releaseInfo.Name}"" ""{_releaseInfo.URL}""",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = false,
-            };
 
-            string consoleOutput;
-
-            using (Process process = new Process())
-            {
-                process.StartInfo = processInfo;
-                process.Start();
-
-                consoleOutput = process.StandardOutput.ReadToEnd();
-
-                process.WaitForExit();
-            };
+            MainWindow.UseInstallerConsole("installicon", $@"""{_releaseInfo.Name}""", $@"""{_releaseInfo.URL}""");
             Dispatcher.Invoke(() =>
             {
                 BitmapImage appImage = GetImageSource(Path.Combine(Path.GetTempPath(), $"RGS Installer\\Icons\\{_releaseInfo.Name}.png"));
@@ -115,7 +96,6 @@ namespace RGS_Installer
 
         public void InstallApp(string installPath)
         {
-            MessageBox.Show(_releaseInfo.URL);
             MainWindow.UseInstallerConsole("install", installPath, _releaseInfo.URL);
         }
 
