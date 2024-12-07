@@ -74,7 +74,7 @@ namespace RGS_Installer_Console
                 Console.WriteLine(ex.Message);
             }
 
-            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "RGS\\RGS Installer\\Apps.json");
+            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "RGS\\RGS Installer\\apps.json");
             Apps apps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
 
             List<InstalledApp> installedApps;
@@ -269,9 +269,6 @@ namespace RGS_Installer_Console
             Console.WriteLine("Starting Setup...");
 
             CreateRGSFolder();
-
-
-
         }
         private static async void CreateRGSFolder()
         {
@@ -286,7 +283,7 @@ namespace RGS_Installer_Console
             if (!File.Exists(consolePath))
                 File.Copy(Path.Combine(AppContext.BaseDirectory, "RGS Installer Console.exe"), consolePath);
 
-            string jsonPath = Path.Combine(newFolderPath, "Apps.json");
+            string jsonPath = Path.Combine(newFolderPath, "apps.json");
             if (!File.Exists(jsonPath))
             {
                 string jsonContent =
