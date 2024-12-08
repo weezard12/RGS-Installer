@@ -415,7 +415,14 @@ namespace RGS_Installer_Console
             catch (Exception ex)
             {
                 // Handle potential exceptions (e.g., lack of write permission)
-                CreateFolderIfDoesntExist(logFilePath);
+                if (ex is FileNotFoundException)
+                    try
+                    {
+                        File.Create(logFilePath);
+                    }
+                    catch { }
+                    
+                
             }
         }
 
