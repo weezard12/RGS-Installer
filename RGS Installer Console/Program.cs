@@ -276,7 +276,7 @@ namespace RGS_Installer_Console
 
             string newFolderPath = Path.Combine(userDirectory, "RGS\\RGS Installer");
 
-            CreateFolderIfDoesntExist(newFolderPath);
+            CreateFolderIfDoesntExist(newFolderPath, true);
 
             string consolePath = Path.Combine(newFolderPath, "RGS Installer Console.exe");
 
