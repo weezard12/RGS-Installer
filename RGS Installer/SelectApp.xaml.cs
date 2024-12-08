@@ -46,6 +46,7 @@ namespace RGS_Installer
                 {
                     // sets the app image
                     AppImage.Source = appImage;
+                    AppImage.Margin = new Thickness(10);
 
                     //sets the image background gradient
                     GradientColor gradientColor = GradientColor.GetBestGradient(GradientColor.GetDominantColors(appImage));

@@ -20,7 +20,7 @@ namespace RGS_Installer
         public static GradientColor GetBestGradient(Color[] colors)
         {
             if (colors == null || colors.Length < 2)
-                throw new ArgumentException("At least two colors are required.");
+                return new GradientColor();
 
             GradientColor bestPair = new GradientColor();
             double maxContrast = double.MinValue;

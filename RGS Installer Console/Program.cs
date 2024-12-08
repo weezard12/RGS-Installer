@@ -434,7 +434,6 @@ namespace RGS_Installer_Console
             return repoName;
         }
 
-        
         #endregion
 
         #region jsons
