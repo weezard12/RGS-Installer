@@ -1,8 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Diagnostics;
-using System.IO;
 using System.IO.Compression;
-using System.Net.Http;
 using System.Security.Principal;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,15 +9,21 @@ namespace RGS_Installer_Console
 {
     internal class Program
     {
+        // GitHub
         private static readonly string GITHUB_TOKEN = "";
         private const string INSTALLER_TAG = "rgs_installer";
+        private static bool CLOSE_AFTER_COMMAND = true;
 
+        // Logging
         private const bool LoggingEnabled = true;
+        private static readonly string LogFilePath = Path.Combine(Path.GetTempPath(), "RGS Installer\\rgs_installer_log.txt");
+
         // commands
-        // install {repository_name}
+        // install {installationPath} {repository_name} {install_actions[] <create_desktop_shortcut>}
         // installicon {url} {name}
         // update {repository_name}
         // releases {username} - prints all of the urls to of the latest releases that have rgs_installer tag
+        // desktop_shortcut {path}
         public static void Main(string[] args)
         {
             // creates and clears the logging file
@@ -34,9 +38,6 @@ namespace RGS_Installer_Console
                 {
                 }
             }
-            
-            GetReleases("");
-            Console.ReadLine();
 
             // commands
             if (args.Length == 0)
@@ -55,58 +56,24 @@ namespace RGS_Installer_Console
                     GetReleases();
             }
                 
-
             else if (args[0] == "installicon")
             {
                 //Console.WriteLine(args[0] + " " + args[1] + " " + args[2]);
                 InstallReleaseIcon(args[1], args[2]);
+            }
+            else if (args[0] == "desktop_shortcut")
+            {
+                if (args.Length == 2)
+                    CreateShortcutOnDesktop(args[1], Path.GetFileNameWithoutExtension(args[1]));
+                else if(args.Length == 3)
+                    CreateShortcutOnDesktop(args[1], args[2]);
             }
             else
                 Console.WriteLine("Error Invalid args");
             Console.ReadLine();
         }
 
-        private static async void InstallCommand(string installationPath, string downloadUrl, Action doAfterInstall = null)
-        {
-            string tempInstallPath = Path.Combine(Path.GetTempPath(), "RGS Installer\\Download");
-            CreateFolderIfDoesntExist(tempInstallPath, true);
-
-            await InstallReleaseInFolder(downloadUrl,"rgs_installer", "publish.zip", tempInstallPath, false);
-            try
-            {
-                ZipFile.ExtractToDirectory(Path.Combine(tempInstallPath, "publish.zip"), installationPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-
-            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "RGS\\RGS Installer\\apps.json");
-            Apps apps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
-
-            List<InstalledApp> installedApps;
-            if (apps == null)
-                installedApps = apps.InstalledApps.ToList();
-            else
-                installedApps = new List<InstalledApp>();
-
-            installedApps.Add(new InstalledApp()
-            {
-                Name = GetRepoNameFromURL(downloadUrl),
-                Path = installationPath,
-                LastUpdate= DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                RepoURL = downloadUrl
-            });
-
-            apps.InstalledApps = installedApps.ToArray();
-
-            File.WriteAllText(installedAppsPath, JsonSerializer.Serialize<Apps>(apps));
-
-            //invokes optional code before closing the console
-            doAfterInstall?.Invoke();
-
-            Environment.Exit(0);
-        }
+        
 
         public static async void GetReleases(string userName = "weezard12", string tag = "")
         {
@@ -116,7 +83,7 @@ namespace RGS_Installer_Console
 
             Console.WriteLine(JsonSerializer.Serialize<Releases>(releases));
 
-            //Environment.Exit(0);
+            Environment.Exit(0);
         }
 
         /// <summary>
@@ -191,7 +158,7 @@ namespace RGS_Installer_Console
                     }
                     try
                     {
-                        releaseInfos.Add(GetReleaseFromJson(releaseJson));
+                        releaseInfos.Add(GetReleaseFromJson(releaseJson, repoName));
                     }
                     catch
                     {
@@ -223,7 +190,7 @@ namespace RGS_Installer_Console
             }
             return null;
         }
-        private static ReleaseInfo GetReleaseFromJson(string releaseJson)
+        private static ReleaseInfo GetReleaseFromJson(string releaseJson, string repoName = "No Name Loaded")
         {
             var release = JObject.Parse(releaseJson);
 
@@ -231,7 +198,7 @@ namespace RGS_Installer_Console
             var releaseInfo = new ReleaseInfo
             {
                 Name = release["name"]?.ToString(),
-                RepoName = "TODO name",
+                RepoName = repoName,
                 Description = release["body"]?.ToString(),
                 URL = release["html_url"]?.ToString(),
                 Tag = release["tag_name"]?.ToString(),
@@ -242,6 +209,55 @@ namespace RGS_Installer_Console
         }
 
         #region InstallLogic
+        private static async void InstallCommand(string installationPath, string downloadUrl, Action doAfterInstall = null)
+        {
+            string tempInstallPath = Path.Combine(Path.GetTempPath(), "RGS Installer\\Download");
+            CreateFolderIfDoesntExist(tempInstallPath, true);
+
+            await InstallReleaseInFolder(downloadUrl, "rgs_installer", "publish.zip", tempInstallPath, false);
+            try
+            {
+                ZipFile.ExtractToDirectory(Path.Combine(tempInstallPath, "publish.zip"), installationPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "RGS\\RGS Installer\\apps.json");
+            Apps apps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
+
+            List<InstalledApp> installedApps;
+            if (apps == null)
+                installedApps = apps.InstalledApps.ToList();
+            else
+                installedApps = new List<InstalledApp>();
+
+            installedApps.Add(new InstalledApp()
+            {
+                Name = GetRepoNameFromURL(downloadUrl),
+                Path = installationPath,
+                LastUpdate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                RepoURL = downloadUrl
+            });
+
+            apps.InstalledApps = installedApps.ToArray();
+
+            File.WriteAllText(installedAppsPath, JsonSerializer.Serialize<Apps>(apps));
+
+            //invokes optional code before closing the console
+            try
+            {
+                doAfterInstall?.Invoke();
+            }
+            catch(Exception ex)
+            {
+                Log($"Error Failed to invoke action after installation. Exeption: {ex}");
+            }
+            if(CLOSE_AFTER_COMMAND)
+                Environment.Exit(0);
+        }
+
         private static async void InstallReleaseIcon(ReleaseInfo releaseInfo)
         {
             InstallReleaseIcon(releaseInfo.Name, releaseInfo.URL, releaseInfo.Tag);
@@ -320,6 +336,8 @@ namespace RGS_Installer_Console
             }
             Console.WriteLine("Starting Setup...");
 
+            MonitorFile(LogFilePath);
+
             CreateRGSFolder();
         }
         private static async void CreateRGSFolder()
@@ -333,7 +351,7 @@ namespace RGS_Installer_Console
             string consolePath = Path.Combine(newFolderPath, "RGS Installer Console.exe");
 
             if (!File.Exists(consolePath))
-                File.Copy(Path.Combine(AppContext.BaseDirectory, "RGS Installer Console.exe"), consolePath);
+                File.Copy(Process.GetCurrentProcess().MainModule.FileName, consolePath);
 
             string jsonPath = Path.Combine(newFolderPath, "apps.json");
             if (!File.Exists(jsonPath))
@@ -346,17 +364,23 @@ namespace RGS_Installer_Console
                 File.WriteAllText(jsonPath, jsonContent);
                 
             }
+
+            // app will be open after installing
+            CLOSE_AFTER_COMMAND = false;
+
+            string InstallerExePath = Path.Combine(newFolderPath, "RGS Installer\\RGS Installer.exe");
             InstallCommand(newFolderPath, "https://github.com/weezard12/RGS-Installer/releases/tag/rgs_installer",
                 new Action(() =>
                 {
                     ProcessStartInfo psi = new ProcessStartInfo
                     {
-                        FileName = Path.Combine(newFolderPath, "RGS Installer\\RGS Installer.exe"),
+                        FileName = InstallerExePath,
                         UseShellExecute = false,
-                        CreateNoWindow = false,
+                        CreateNoWindow = true,
                     };
                     Process.Start(psi);
                 }));
+            CreateShortcutOnDesktop(InstallerExePath,"RGS Installer");
         }
 
         private static void CreateFolderIfDoesntExist(string path, bool clearDirectory = false)
@@ -457,12 +481,10 @@ namespace RGS_Installer_Console
             if (!LoggingEnabled)
                 return;
 
-            string tempFolder = Path.GetTempPath();
-            string logFilePath = Path.Combine(tempFolder, "RGS Installer\\rgs_installer_log.txt");
             try
             {
                 // Write the log message to the file
-                File.AppendAllText(logFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
+                File.AppendAllText(LogFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
             }
             catch (Exception ex)
             {
@@ -470,12 +492,90 @@ namespace RGS_Installer_Console
                 if (ex is FileNotFoundException)
                     try
                     {
-                        File.Create(logFilePath);
+                        File.Create(LogFilePath);
                     }
                     catch { }
-                    
-                
             }
+        }
+
+
+        private static void MonitorFile(string filePath)
+        {
+            // Check if the file exists
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine("Log file not found.");
+                return;
+            }
+
+            // Create a FileSystemWatcher to monitor the file for changes
+            FileSystemWatcher watcher = new FileSystemWatcher(Path.GetDirectoryName(filePath))
+            {
+                Filter = Path.GetFileName(filePath),
+                NotifyFilter = NotifyFilters.LastWrite
+            };
+
+            watcher.Changed += (sender, e) =>
+            {
+                try
+                {
+                    // Read the new line added to the file
+                    string[] lines = File.ReadAllLines(filePath);
+                    WriteLineWithColors(lines[lines.Length - 1]);
+                }
+                catch
+                {
+
+                }
+
+            };
+
+            watcher.EnableRaisingEvents = true;
+        }
+
+        private static void WriteLineWithColors(string message)
+        {
+            // Split the message into parts based on spaces to handle words
+            string[] parts = message.Split(new[] { ' ' }, StringSplitOptions.None);
+
+            foreach (var part in parts)
+            {
+                // Check each character in the part
+                foreach (char c in part)
+                {
+                    if (c == '/')
+                    {
+                        Console.ForegroundColor = ConsoleColor.Gray;
+                        Console.Write(c);
+                    }
+                    else if (part.Equals("Log", StringComparison.Ordinal))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write(part);
+                        break;
+                    }
+                    else if (part.Equals("Error", StringComparison.Ordinal))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write(part);
+                        break;
+                    }
+                    else
+                    {
+                        // Reset to default color for other text
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write(c);
+                    }
+
+                }
+                // Reset color to default after each part
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write(" "); // Add space after each part
+            }
+
+            // Reset color to default after the entire message
+            Console.ResetColor();
+            Console.WriteLine();
         }
 
         private static string GetRepoNameFromURL(string url)
@@ -504,8 +604,8 @@ namespace RGS_Installer_Console
             {
                 FileName = "powershell",
                 Arguments = $"-Command \"{command}\"",
-                CreateNoWindow = false,
-                UseShellExecute = true,
+                CreateNoWindow = true,
+                UseShellExecute = false,
             };
             Process.Start(startInfo);
         }
