@@ -13,7 +13,6 @@ namespace RGS_Installer_Console
     {
         private static readonly string GITHUB_TOKEN = "";
         private const string INSTALLER_TAG = "rgs_installer";
-        private static readonly string USERNAME = "weezard12";
 
         private const bool LoggingEnabled = true;
         // commands
@@ -494,6 +493,22 @@ namespace RGS_Installer_Console
             return repoName;
         }
 
+        public static void CreateShortcutOnDesktop(string path, string shortcutName)
+        {
+            string command = String.Format("$Shortcut = (New-Object -COM WScript.Shell).CreateShortcut([System.IO.Path]::Combine($Env:USERPROFILE, 'Desktop', '{1}.lnk')); " +
+                             "$Shortcut.TargetPath = '{0}'; " +
+                             "$Shortcut.Save()", path, shortcutName);
+
+            // Start the process
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = "powershell",
+                Arguments = $"-Command \"{command}\"",
+                CreateNoWindow = false,
+                UseShellExecute = true,
+            };
+            Process.Start(startInfo);
+        }
         #endregion
 
         #region jsons
