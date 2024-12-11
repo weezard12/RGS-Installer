@@ -1,12 +1,11 @@
-﻿
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Net.Http;
 using System.Security.Principal;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
 
 namespace RGS_Installer_Console
 {
@@ -30,13 +29,16 @@ namespace RGS_Installer_Console
                 string logFilePath = Path.Combine(Path.GetTempPath(), "RGS Installer\\rgs_installer_log.txt");
                 try
                 {
-                    File.WriteAllLines(logFilePath, new string[0]);
+                    File.WriteAllLines(logFilePath, []);
                 }
                 catch (Exception ex)
                 {
                 }
             }
             
+            GetReleases("");
+            Console.ReadLine();
+
             // commands
             if (args.Length == 0)
             {
@@ -47,7 +49,13 @@ namespace RGS_Installer_Console
                 InstallCommand(args[1], args[2]);
 
             else if (args[0] == "releases")
-                GetReleases();
+            {
+                if(args.Length > 1)
+                    GetReleases(args[1]);
+                else
+                    GetReleases();
+            }
+                
 
             else if (args[0] == "installicon")
             {
@@ -101,22 +109,25 @@ namespace RGS_Installer_Console
             Environment.Exit(0);
         }
 
-        public static async void GetReleases()
+        public static async void GetReleases(string userName = "weezard12", string tag = "")
         {
-            ReleaseInfo[] allReleases = await GetAllReleasedRepos("weezard12");
+            ReleaseInfo[] allReleases = await GetAllReleasedRepos(userName, tag);
 
             Releases releases = new Releases() { ReleasesInfos = allReleases };
 
             Console.WriteLine(JsonSerializer.Serialize<Releases>(releases));
 
-            Environment.Exit(0);
+            //Environment.Exit(0);
         }
 
-
-        private static async Task<ReleaseInfo[]> GetAllReleasedRepos(string username)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns>Array of of a releases. (one for each repo with release).</returns>
+        private static async Task<ReleaseInfo[]> GetAllReleasedRepos(string username, string releaseTag)
         {
             HttpClient _httpClient = new HttpClient();
-
             var releaseInfos = new List<ReleaseInfo>();
 
             try
@@ -142,41 +153,52 @@ namespace RGS_Installer_Console
                     Console.WriteLine($"Failed to fetch repositories for user {username}. Status code: {reposResponse.StatusCode}");
                     return Array.Empty<ReleaseInfo>();
                 }
-
+                    
                 var reposJson = await reposResponse.Content.ReadAsStringAsync();
                 var repos = JArray.Parse(reposJson);
+                Log("Fetched repos from github api:");
+                Log(reposJson);
 
-                // Step 2: Loop through each repo and get the latest release information if it exists
+                // Step 2: Loop through each repo and get the correct release
                 foreach (var repo in repos)
                 {
+                    // Gets the repo name
                     string repoName = repo["name"]?.ToString();
-                    string releasesUrl = $"https://api.github.com/repos/{username}/{repoName}/releases/latest";
 
-                    // Fetch the latest release info for each repository
-                    var releaseResponse = await _httpClient.GetAsync(releasesUrl);
+                    string releaseJson = String.Empty;
 
-                    if (releaseResponse.IsSuccessStatusCode)
+                    if (releaseTag == "")
                     {
-                        var releaseJson = await releaseResponse.Content.ReadAsStringAsync();
-                        var release = JObject.Parse(releaseJson);
+                        // If no tag specified then it will get the latest release
+                        string releasesUrl = $"https://api.github.com/repos/{username}/{repoName}/releases/latest";
+                        releaseJson = await GetJsonStringFromUrl(releasesUrl, _httpClient);
+                    }
+                    else
+                    {
+                        // If a tag is specified then it will get the release of that tag
+                        string releasesUrl = $"https://api.github.com/repos/{username}/{repoName}/releases";
 
-                        // Create and populate a ReleaseInfo object with release details
-                        var releaseInfo = new ReleaseInfo
+                        JArray releases = JArray.Parse(await GetJsonStringFromUrl(releasesUrl, _httpClient));
+                        //Console.WriteLine(releases);
+                        foreach (var release in releases)
                         {
-                            Name = release["name"]?.ToString(),
-                            RepoName = repoName,
-                            Description = release["body"]?.ToString(),
-                            URL = release["html_url"]?.ToString(),
-                            Tag = release["tag_name"]?.ToString(),
-                            Date = release["published_at"]?.ToString()
-                        };
-
-                        releaseInfos.Add(releaseInfo);
+                            if (release["tag_name"]?.ToString() == releaseTag)
+                            {
+                                //releasesUrl = release["url"]?.ToString();
+                                releaseJson = release.ToString();
+                                //Console.WriteLine(releaseJson);
+                            }
+                        }
                     }
-                    else if (releaseResponse.StatusCode != System.Net.HttpStatusCode.NotFound)
+                    try
                     {
-                        Console.WriteLine($"Failed to fetch release for repo {repoName}. Status code: {releaseResponse.StatusCode}");
+                        releaseInfos.Add(GetReleaseFromJson(releaseJson));
                     }
+                    catch
+                    {
+
+                    }
+                    
                 }
             }
             catch (Exception ex)
@@ -187,9 +209,40 @@ namespace RGS_Installer_Console
 
             return releaseInfos.ToArray();
 
+        }
+        private async static Task<string> GetJsonStringFromUrl(string url,HttpClient httpClient)
+        {
+            var releaseResponse = await httpClient.GetAsync(url);
 
+            if (releaseResponse.IsSuccessStatusCode)
+            {
+                return await releaseResponse.Content.ReadAsStringAsync();
+            }
+            else if (releaseResponse.StatusCode != System.Net.HttpStatusCode.NotFound)
+            {
+                Console.WriteLine($"Failed to fetch url {url}. Status code: {releaseResponse.StatusCode}");
+            }
+            return null;
+        }
+        private static ReleaseInfo GetReleaseFromJson(string releaseJson)
+        {
+            var release = JObject.Parse(releaseJson);
+
+            // Create and populate a ReleaseInfo object with release details
+            var releaseInfo = new ReleaseInfo
+            {
+                Name = release["name"]?.ToString(),
+                RepoName = "TODO name",
+                Description = release["body"]?.ToString(),
+                URL = release["html_url"]?.ToString(),
+                Tag = release["tag_name"]?.ToString(),
+                Date = release["published_at"]?.ToString()
+            };
+
+            return releaseInfo;
         }
 
+        #region InstallLogic
         private static async void InstallReleaseIcon(ReleaseInfo releaseInfo)
         {
             InstallReleaseIcon(releaseInfo.Name, releaseInfo.URL, releaseInfo.Tag);
@@ -203,7 +256,6 @@ namespace RGS_Installer_Console
 
             Environment.Exit(0);
         }
-
 
         private static async Task<List<string>> InstallReleaseInFolder(ReleaseInfo releaseInfo, string assetName, string installPath, bool usePathAsFileName = false)
         {
@@ -255,6 +307,7 @@ namespace RGS_Installer_Console
 
             return savedFiles;
         }
+        #endregion
 
         #region BasicSetup
         private static void StartBasicSetup()
