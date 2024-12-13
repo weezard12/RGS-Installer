@@ -38,7 +38,7 @@ namespace RGS_Installer_Console
                 {
                 }
             }
-
+            
             // commands
             if (args.Length == 0)
             {
@@ -70,10 +70,18 @@ namespace RGS_Installer_Console
             }
             else
                 Console.WriteLine("Error Invalid args");
-            Console.ReadLine();
+
+            commandsLoop:
+            string input = Console.ReadLine();
+            if (input == "") return;
+            if (input == "debug")
+                MonitorFile(LogFilePath);
+            else if(input == "clear")
+                Console.Clear();
+            goto commandsLoop;
         }
 
-
+        #region GetReleases
         public static async void GetReleases(string userName = "weezard12", string tag = "")
         {
             ReleaseInfo[] allReleases = await GetAllReleasedRepos(userName, tag);
@@ -206,6 +214,7 @@ namespace RGS_Installer_Console
 
             return releaseInfo;
         }
+        #endregion
 
         #region InstallLogic
         private static async void InstallCommand(string installationPath, string downloadUrl, Action doAfterInstall = null)
@@ -224,7 +233,11 @@ namespace RGS_Installer_Console
             }
 
             string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
-            CreateFolderIfDoesntExist(installedAppsPath);
+            CreateFileIfDoesntExist(installedAppsPath, @"
+{
+    ""installed_apps"": [
+    ]
+}");
             Apps apps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
 
             List<InstalledApp> installedApps;
@@ -233,13 +246,10 @@ namespace RGS_Installer_Console
             else
                 installedApps = new List<InstalledApp>();
 
-            installedApps.Add(new InstalledApp()
-            {
-                Name = GetRepoNameFromURL(downloadUrl),
-                Path = installationPath,
-                LastUpdate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                RepoURL = downloadUrl
-            });
+            InstalledApp installedApp = InstalledApp.FromUrl(downloadUrl);
+            installedApp.LastUpdate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            installedApp.Path = installationPath;
+            installedApps.Add(installedApp);
 
             apps.InstalledApps = installedApps.ToArray();
 
@@ -282,7 +292,7 @@ namespace RGS_Installer_Console
 
             var savedFiles = new List<string>();
 
-            Log("Log Installing in path:" + installPath);
+            Log($"Log Installing Release in path: {installPath}\nfrom url: {releaseURL}, with tag: {releaseTag}, asset name: {assetName}");
             try
             {
                 // Load the GitHub token from environment variable
@@ -317,7 +327,7 @@ namespace RGS_Installer_Console
             }
             catch (Exception ex)
             {
-                Log($"Error An error occurred: {ex.Message}");
+                Log($"Error An error occurred when installing a release: {ex.Message}");
             }
 
             return savedFiles;
@@ -363,17 +373,12 @@ namespace RGS_Installer_Console
             if (!File.Exists(consolePath))
                 File.Copy(Process.GetCurrentProcess().MainModule.FileName, consolePath);
 
-            string jsonPath = Path.Combine(newFolderPath, "apps.json");
-            if (!File.Exists(jsonPath))
-            {
-                string jsonContent =
-@"{
+            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
+            CreateFileIfDoesntExist(installedAppsPath, @"
+{
     ""installed_apps"": [
     ]
-}";
-                File.WriteAllText(jsonPath, jsonContent);
-                
-            }
+}");
 
             // app will be open after installing
             CLOSE_AFTER_COMMAND = false;
@@ -433,8 +438,30 @@ namespace RGS_Installer_Console
                     File.Delete(path);
                     CreateFolderIfDoesntExist(path, clearDirectory);
                 }
-                
-                
+            }
+        }
+        private static void CreateFileIfDoesntExist(string path,string content = "")
+        {
+            try
+            {
+                // If the path contains a directory structure, ensure it exists
+                string directoryPath = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directoryPath))
+                {
+                    CreateFolderIfDoesntExist(directoryPath);
+                }
+
+                // Check if the file already exists
+                if (!File.Exists(path))
+                {
+                    // Create the file and close the stream immediately
+                    File.WriteAllText(path,content);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($@"Error The file ""{path}"" could not be created. Error: {ex.Message}");
+                throw; // Optionally rethrow the exception if needed
             }
         }
         #endregion
@@ -667,14 +694,60 @@ namespace RGS_Installer_Console
         // json of an installed app
         private class InstalledApp
         {
-            [JsonPropertyName("name")]
-            public string Name { get; set; }
+            [JsonPropertyName("publisher_name")]
+            public string PublisherName { get; set; }
+            [JsonPropertyName("app_name")]
+            public string AppName { get; set; }
+            [JsonPropertyName("app_tag")]
+            public string AppTag { get; set; }
             [JsonPropertyName("path")]
             public string Path { get; set; }
             [JsonPropertyName("last_update")]
             public string LastUpdate { get; set; }
             [JsonPropertyName("repo")]
             public string RepoURL { get; set; }
+
+            public static InstalledApp FromUrl(string url)
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(url))
+                        Log("Error URL cannot be null or empty");
+
+                    Uri uri = new Uri(url);
+                    if (!uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase))
+                        Log("Error URL must be from github.com");
+
+                    // Split the path into segments: "/weezard12/PlayFiles/releases/tag/test"
+                    string[] segments = uri.AbsolutePath.Trim('/').Split('/');
+                    if (segments.Length < 5 || segments[2] != "releases" || segments[3] != "tag")
+                        throw new ArgumentException("URL format is not valid for a GitHub release");
+
+                    // Extract information
+                    string publisher = segments[0];
+                    string appName = segments[1];
+                    string appTag = segments[4];
+
+                    // Construct the repository URL
+                    string repoURL = $"https://github.com/{publisher}/{appName}";
+
+                    // Return a populated InstalledApp object
+                    return new InstalledApp
+                    {
+                        PublisherName = publisher,
+                        AppName = appName,
+                        AppTag = appTag,
+                        RepoURL = repoURL,
+                        LastUpdate = DateTime.UtcNow.ToString("o"), // ISO 8601 format for last update
+                        Path = null // Path can be assigned later if applicable
+                    };
+                }
+                catch (Exception ex)
+                {
+                    Log($"Error Failed to parse URL: {url}. Error: {ex.Message}. "+ ex);
+                }
+                return null;
+            }
         }
 
         #endregion
