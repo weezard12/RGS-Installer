@@ -19,7 +19,7 @@ namespace RGS_Installer_Console
         private static readonly string LogFilePath = Path.Combine(Path.GetTempPath(), "RGS Installer\\rgs_installer_log.txt");
 
         // commands
-        // install {installationPath} {repository_name} {install_actions[] <create_desktop_shortcut>}
+        // install {installationPath} {repository_name} {install_actions[] <create_desktop_shortcut> <save_in_apps.json>}
         // installicon {url} {name}
         // update {repository_name}
         // releases {username} - prints all of the urls to of the latest releases that have rgs_installer tag
@@ -73,7 +73,6 @@ namespace RGS_Installer_Console
             Console.ReadLine();
         }
 
-        
 
         public static async void GetReleases(string userName = "weezard12", string tag = "")
         {
@@ -224,7 +223,8 @@ namespace RGS_Installer_Console
                 Console.WriteLine(ex.Message);
             }
 
-            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "RGS\\RGS Installer\\apps.json");
+            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
+            CreateFolderIfDoesntExist(installedAppsPath);
             Apps apps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
 
             List<InstalledApp> installedApps;
@@ -327,11 +327,21 @@ namespace RGS_Installer_Console
         #region BasicSetup
         private static void StartBasicSetup()
         {
-            Console.WriteLine("Welcome to RGS Installer Console!");
-            Console.WriteLine("This is the non UI application for installing RGS apps easelly.");
+            Console.ResetColor();
+            Console.Write("Welcome to ");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write("RGS Installer Console");
+            Console.ResetColor();
+            Console.WriteLine("!");
+
+            Console.WriteLine("This is the non UI application for installing RGS apps easily.");
             if (!IsRunningAsAdministrator())
             {
-                Console.WriteLine("Please open this app as an Administrator for installing apps on this computer.");
+                Console.Write("Please ");
+                Console.BackgroundColor = ConsoleColor.Blue;
+                Console.Write("open this app as an Administrator");
+                Console.ResetColor();
+                Console.WriteLine(" for installing apps on this computer.");
                 return;
             }
             Console.WriteLine("Starting Setup...");
@@ -484,7 +494,7 @@ namespace RGS_Installer_Console
             try
             {
                 // Write the log message to the file
-                File.AppendAllText(LogFilePath, $"{DateTime.Now}: {message}{Environment.NewLine}");
+                File.AppendAllText(LogFilePath, $"{DateTime.Now} {message}{Environment.NewLine}");
             }
             catch (Exception ex)
             {
