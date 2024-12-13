@@ -27,6 +27,7 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Label Content="Installesion Path:" FontSize="15"/>
 
@@ -40,8 +41,16 @@
 
             </Button>
             <Label x:Name="PathText" Content="C:\" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-            <Button Grid.Column="2" Click="Install_Click" Content="Install" Margin="0" />
+                <Button Grid.Column="2" Click="Install_Click" Content="Install" Margin="0" />
+            </Grid>
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width = "Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <Label Content="Version:" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+            </Grid>
         </Grid>
-    </Grid>
     </Grid>
 </Window>
