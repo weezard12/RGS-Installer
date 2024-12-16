@@ -68,6 +68,11 @@ namespace RGS_Installer_Console
                 else if(args.Length == 3)
                     CreateShortcutOnDesktop(args[1], args[2]);
             }
+            else if (args[0] == "uninstall")
+            {
+                if (args.Length > 1)
+                    UnInstall(args[1]);
+            }
             else
                 Console.WriteLine("Error Invalid args");
 
@@ -351,6 +356,22 @@ namespace RGS_Installer_Console
         }
         #endregion
 
+        #region UnInstallLogic
+        private static void UnInstall(string path)
+        {
+            CreateFolderIfDoesntExist(Path.GetDirectoryName(path), true);
+            InstalledApp[] installedApps = Apps.GetInstalledApps().InstalledApps;
+            foreach (var installedApp in installedApps)
+            {
+                if(installedApp.Path == path)
+                {
+                    Apps.RemoveInstalledApp(installedApp);
+                    return;
+                }
+            }
+        }
+        #endregion
+
         #region BasicSetup
         private static void StartBasicSetup()
         {
@@ -413,6 +434,7 @@ namespace RGS_Installer_Console
                     Process.Start(psi);
                 }));
             CreateShortcutOnDesktop(InstallerExePath,"RGS Installer");
+            CreateShortcutOnDesktop(consolePath, "RGS Installer");
         }
 
         private static void CreateFolderIfDoesntExist(string path, bool clearDirectory = false)
@@ -457,7 +479,7 @@ namespace RGS_Installer_Console
                 }
             }
         }
-        private static void CreateFileIfDoesntExist(string path,string content = "")
+        private static void CreateFileIfDoesntExist(string path, string content = "")
         {
             try
             {
@@ -471,6 +493,7 @@ namespace RGS_Installer_Console
                 // Check if the file already exists
                 if (!File.Exists(path))
                 {
+                    Log("overwriting file:"+ path);
                     // Create the file and close the stream immediately
                     File.WriteAllText(path,content);
                 }
@@ -706,6 +729,46 @@ namespace RGS_Installer_Console
         {
             [JsonPropertyName("apps")]
             public InstalledApp[] InstalledApps { get; set; }
+
+            public static Apps GetInstalledApps()
+            {
+                string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
+                CreateFileIfDoesntExist(installedAppsPath, @"
+                {
+                    ""installed_apps"": [
+                    ]
+                }");
+                return JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
+            }
+            public static void SetInstalledApps(Apps apps)
+            {
+                string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
+                CreateFileIfDoesntExist(installedAppsPath, @"
+                {
+                    ""installed_apps"": [
+                    ]
+                }");
+                File.WriteAllText(installedAppsPath, JsonSerializer.Serialize(apps));
+            }
+            public static void RemoveInstalledApp(InstalledApp appToRemove)
+            {
+                Apps installedApps = GetInstalledApps();
+                List<InstalledApp> currentInstalledApps = installedApps.InstalledApps.ToList();
+                currentInstalledApps.Remove(appToRemove);
+                installedApps.InstalledApps = currentInstalledApps.ToArray();
+
+                SetInstalledApps(installedApps);
+            }
+
+            public static void AddInstalledApp(InstalledApp appToAdd)
+            {
+                Apps installedApps = GetInstalledApps();
+                List<InstalledApp> currentInstalledApps = installedApps.InstalledApps.ToList();
+                currentInstalledApps.Add(appToAdd);
+                installedApps.InstalledApps = currentInstalledApps.ToArray();
+
+                SetInstalledApps(installedApps);
+            }
         }
 
         // json of an installed app
