@@ -46,7 +46,7 @@ namespace RGS_Installer_Console
                 StartBasicSetup();
             }
             else if (args[0] == "install")
-                InstallCommand(args[1], args[2]);
+                InstallCommand(args[1], args[2], args[3]);
 
             else if (args[0] == "releases")
             {
@@ -216,19 +216,29 @@ namespace RGS_Installer_Console
         #endregion
 
         #region InstallLogic
-        private static async void InstallCommand(string installationPath, string downloadUrl, Action doAfterInstall = null)
+        private static async void InstallCommand(string installationPath, string releaseUrl, string assetName, Action doAfterInstall = null)
         {
             string tempInstallPath = Path.Combine(Path.GetTempPath(), "RGS Installer\\Download");
             CreateFolderIfDoesntExist(tempInstallPath, true);
 
-            await InstallReleaseInFolder(downloadUrl, "rgs_installer", "publish.zip", tempInstallPath, false);
+            await InstallReleaseInFolder(releaseUrl, assetName, tempInstallPath, false);
             try
             {
-                ZipFile.ExtractToDirectory(Path.Combine(tempInstallPath, "publish.zip"), installationPath);
+                ZipFile.ExtractToDirectory(Path.Combine(tempInstallPath, assetName), installationPath);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Log("Error "+ ex.Message);
+
+                // if failed to unzip the file then just try to copy it as it is.
+                try
+                {
+                    File.Move(Path.Combine(tempInstallPath, assetName), Path.Combine(installationPath, assetName));
+                }
+                catch
+                {
+                    Log("Error "+ex.Message);
+                }
             }
 
             string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
@@ -245,7 +255,7 @@ namespace RGS_Installer_Console
             else
                 installedApps = new List<InstalledApp>();
 
-            InstalledApp installedApp = InstalledApp.FromUrl(downloadUrl);
+            InstalledApp installedApp = InstalledApp.FromUrl(releaseUrl);
             installedApp.LastUpdate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             installedApp.Path = installationPath;
             installedApps.Add(installedApp);
@@ -276,22 +286,30 @@ namespace RGS_Installer_Console
             string iconsPath = Path.Combine(Path.GetTempPath(), $"RGS Installer\\Icons\\{releaseName}.png");
 
             CreateFolderIfDoesntExist(iconsPath, true);
-            await InstallReleaseInFolder(releaseUrl, installerTag, "icon.png", iconsPath, true);
+            await InstallReleaseInFolder(releaseUrl, "icon.png", iconsPath, true);
 
             Environment.Exit(0);
         }
 
         private static async Task<List<string>> InstallReleaseInFolder(ReleaseInfo releaseInfo, string assetName, string installPath, bool usePathAsFileName = false)
         {
-            return await InstallReleaseInFolder(releaseInfo.URL,releaseInfo.Tag, assetName, installPath, usePathAsFileName);
+            return await InstallReleaseInFolder(releaseInfo.URL, assetName, installPath, usePathAsFileName);
         }
-        private static async Task<List<string>> InstallReleaseInFolder(string releaseURL, string releaseTag, string assetName, string installPath, bool usePathAsFileName = false)
+        /// <summary>
+        /// installs a release asset in a folder. takes in the release Ulease URL with the tag!
+        /// </summary>
+        /// <param name="releaseURL"></param>
+        /// <param name="assetName"></param>
+        /// <param name="installPath"></param>
+        /// <param name="usePathAsFileName"></param>
+        /// <returns></returns>
+        private static async Task<List<string>> InstallReleaseInFolder(string releaseURL, string assetName, string installPath, bool usePathAsFileName = false)
         {
             HttpClient _httpClient = new HttpClient();
 
             var savedFiles = new List<string>();
 
-            Log($"Log Installing Release in path: {installPath}\nfrom url: {releaseURL}, with tag: {releaseTag}, asset name: {assetName}");
+            Log($"Log Installing Release in path: {installPath} . from url: {releaseURL}, asset name: {assetName}");
             try
             {
                 // Load the GitHub token from environment variable
@@ -383,7 +401,7 @@ namespace RGS_Installer_Console
             CLOSE_AFTER_COMMAND = false;
 
             string InstallerExePath = Path.Combine(newFolderPath, "RGS Installer\\RGS Installer.exe");
-            InstallCommand(newFolderPath, "https://github.com/weezard12/RGS-Installer/releases/tag/rgs_installer",
+            InstallCommand(newFolderPath, "https://github.com/weezard12/RGS-Installer/releases/tag/rgs_installer", "publish.zip",
                 new Action(() =>
                 {
                     ProcessStartInfo psi = new ProcessStartInfo
