@@ -129,8 +129,7 @@ namespace RGS_Installer_Console
                     
                 var reposJson = await reposResponse.Content.ReadAsStringAsync();
                 var repos = JArray.Parse(reposJson);
-                Log("Fetched repos from github api:");
-                Log(reposJson);
+                Log("Log Fetched repos from github api:");
 
                 // Step 2: Loop through each repo and get the correct release
                 foreach (var repo in repos)
@@ -166,6 +165,7 @@ namespace RGS_Installer_Console
                     try
                     {
                         releaseInfos.Add(GetReleaseFromJson(releaseJson, repoName));
+                        Log(releaseInfos.Last().ToString().Replace('\n','.'));
                     }
                     catch
                     {
@@ -179,7 +179,6 @@ namespace RGS_Installer_Console
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 return Array.Empty<ReleaseInfo>();
             }
-
             return releaseInfos.ToArray();
 
         }
