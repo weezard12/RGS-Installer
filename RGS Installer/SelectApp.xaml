@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:RGS_Installer"
              mc:Ignorable="d" 
-             d:DesignHeight="200" d:DesignWidth="600">
+             d:DesignHeight="250" d:DesignWidth="600">
     <Grid Height="200" Width="600" Margin="5">
         <Border CornerRadius="30" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
             <Border.Background>
@@ -38,18 +38,18 @@
 
                     <Button Grid.Column="0" Grid.Row="0" Margin="-10" BorderThickness="0" VerticalAlignment="Center" HorizontalAlignment="Center">
                         <Image x:Name="AppImage" Source="/weezard.png" Stretch="Uniform" ClipToBounds="True">
-                            <Image.Effect>
-                                <DropShadowEffect BlurRadius="20" Direction="270" />
-                            </Image.Effect>
                         </Image>
                         <Button.Background>
                             <SolidColorBrush Color="Transparent"/>
                         </Button.Background>
+                        <Button.Effect>
+                            <DropShadowEffect BlurRadius="20" Direction="270" />
+                        </Button.Effect>
                     </Button>
 
                 </Border>
 
-                <Button Content="version" Grid.Column="0" Grid.Row="1" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="White" Background="Transparent" BorderThickness="0"/>
+                <Button x:Name="AppVersion" Content="version" Grid.Column="0" Grid.Row="1" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Top" Foreground="White" Background="Transparent" BorderThickness="0"/>
             </Grid>
 
             <Grid Grid.Column="1" Margin="20" HorizontalAlignment="Left" VerticalAlignment="Top">
@@ -60,33 +60,13 @@
                 <Button x:Name="AppName" Content="App Name" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="40" Foreground="White"
             Background="Transparent" BorderThickness="0"/>
 
-                <Grid Grid.Row="1">
+                <Grid x:Name="ButtonsGrid" Grid.Row="1">
                     <Grid.RowDefinitions>
                         <RowDefinition/>
                         <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
-                    <Button Content="Install" Click="Install_Click" Grid.Row="0" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="30" Margin="0,10,0,0" Foreground="White" Width="100">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border CornerRadius="10"
-        Background="{TemplateBinding Background}"
-        BorderBrush="{TemplateBinding BorderBrush}"
-        BorderThickness="1">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                        <Button.Background>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                <GradientStop Color="LightGreen" Offset="0.0" />
-                                <GradientStop Color="Green" Offset="1.0" />
-                            </LinearGradientBrush>
-                        </Button.Background>
-                        <Button.BorderBrush>
-                            <SolidColorBrush Color="#FF2F80ED"/>
-                        </Button.BorderBrush>
-                    </Button>
+
                 </Grid>
                 
             </Grid>

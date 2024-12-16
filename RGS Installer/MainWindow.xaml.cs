@@ -1,10 +1,12 @@
-﻿using System.ComponentModel;
+﻿using RGS_Installer.Logic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
+using static RGS_Installer.Logic.InstalledAppControl;
 using static RGS_Installer.SelectApp;
 
 
@@ -36,15 +38,9 @@ namespace RGS_Installer
 
             Thread setupThread = new Thread(SetupApp);
             setupThread.Start();
-            //RefreshAvilableApps();
-/*            string jsonFile = UseInstallerConsole("releases");
-            RefreshAvilableApps(jsonFile);
-            startIconWindow.Close();
-            Focus();*/
         }
         public void SetupApp()
         {
-            
             string jsonFile = UseInstallerConsole("releases");
             Dispatcher.Invoke(() =>
             {
@@ -66,10 +62,29 @@ namespace RGS_Installer
         }
         public void RefreshAvilableApps(string jsonFile)
         {
-            AppsPanel.Children.Clear();
-            Releases releases = JsonSerializer.Deserialize<Releases>(jsonFile);
-            foreach (ReleaseInfo release in releases.ReleasesInfos)
-                AppsPanel.Children.Add(new SelectApp(release));
+            Apps installedApps = null;
+            try
+            {
+                installedApps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json")));
+            }
+            catch (Exception ex)
+            {
+            }
+
+            Dispatcher.Invoke(() =>
+            {
+                AppsPanel.Children.Clear();
+            
+                Releases releases = JsonSerializer.Deserialize<Releases>(jsonFile);
+                foreach (ReleaseInfo release in releases.ReleasesInfos)
+                {
+                    InstalledApp matchedApp = installedApps?.InstalledApps.FirstOrDefault(app => app.AppName == release.RepoName);
+                    if (matchedApp != null)
+                        AppsPanel.Children.Add(new InstalledAppControl(release, matchedApp));
+                    else
+                        AppsPanel.Children.Add(new WebAppControl(release));
+                }
+            });
         }
 
         private SelectApp[] ConvertConsoleOutputToApp;
@@ -78,7 +93,24 @@ namespace RGS_Installer
         {
             Application.Current.Shutdown();
         }
-        
+
+        public static void UseInstallerConsoleOnOtherThread(params string[] args)
+        {
+            Thread thread = new Thread(() =>
+            {
+                UseInstallerConsole(args);
+            });
+            thread.Start();
+        }
+        public static void UseInstallerConsoleOnOtherThread(Action actionAfterThreadFinished, params string[] args)
+        {
+            Thread thread = new Thread(() =>
+            {
+                UseInstallerConsole(args);
+                actionAfterThreadFinished.Invoke();
+            });
+            thread.Start();
+        }
         public static string UseInstallerConsole(params string[] args)
         {
             string argsText = String.Empty;

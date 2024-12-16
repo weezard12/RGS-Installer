@@ -21,10 +21,19 @@ namespace RGS_Installer
     public partial class CustomButton : UserControl
     {
         public Action OnClisckAction { get; set; }
-        public CustomButton(string text, Color leftColor, Color rightColor)
+
+        public CustomButton(string text, Action onClick = null) : this(text, Color.FromArgb(0, 0, 0, 0), Color.FromArgb(1, 1, 1, 1), onClick)
+        {
+            this.OnClisckAction = onClick;
+        }
+        public CustomButton(string text, Color leftColor, Color rightColor, Action onClick = null)
         {
             InitializeComponent();
             XmlCustomButton.Content = text;
+            XmlCustomButton.Width += 10;
+            XmlCustomButton.Height += 5;
+
+            this.OnClisckAction = onClick;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

@@ -1,0 +1,34 @@
+﻿<UserControl x:Class="RGS_Installer.SmallUiParts.InstallLoading"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:RGS_Installer"
+             mc:Ignorable="d" d:DesignWidth="800" Height="Auto">
+    <!-- Automatically scales to content size -->
+    <Border CornerRadius="10">
+        <Border.Background>
+            <SolidColorBrush Opacity="0.5" Color="Black"/>
+        </Border.Background>
+        <Grid Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <!-- Label -->
+            <Label x:Name="LabelControl" 
+                   Grid.Column="1" 
+                   Content="Installing. . ." 
+                   Foreground="White" 
+                   HorizontalAlignment="Left" 
+                   VerticalAlignment="Center" 
+                   FontSize="20" />
+            <!-- Loading Circle -->
+            <local:CircleLoading Grid.Column="0" 
+                                 HorizontalAlignment="Left" 
+                                 VerticalAlignment="Center" 
+                                 Width="{Binding ActualHeight, ElementName=LabelControl}" 
+                                 Height="{Binding ActualHeight, ElementName=LabelControl}" />
+        </Grid>
+    </Border>
+</UserControl>

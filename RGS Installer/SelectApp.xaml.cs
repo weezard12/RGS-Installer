@@ -1,4 +1,5 @@
 ﻿
+using RGS_Installer.Logic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json.Serialization;
@@ -15,7 +16,8 @@ namespace RGS_Installer
     /// </summary>
     public partial class SelectApp : UserControl
     {
-        ReleaseInfo _releaseInfo;
+        protected ReleaseInfo _releaseInfo;
+
         public SelectApp(ReleaseInfo releaseInfo)
         {
             InitializeComponent();
@@ -26,6 +28,7 @@ namespace RGS_Installer
         private void SetupXamlByApp()
         {
             AppName.Content = _releaseInfo.Name;
+            AppVersion.Content = _releaseInfo.Tag;
 
             Thread loadImageThread = new Thread(SetAppImage);
             //loadImageThread.IsBackground = true;
@@ -35,7 +38,6 @@ namespace RGS_Installer
         {
             if (_releaseInfo.Tag != "rgs_installer")
                 return;
-
 
             MainWindow.UseInstallerConsole("installicon", _releaseInfo.Name, _releaseInfo.URL);
             Dispatcher.Invoke(() =>
@@ -81,24 +83,9 @@ namespace RGS_Installer
             }
         }
 
-        private void Install_Click(object sender, System.Windows.RoutedEventArgs e)
+        public virtual void InstallApp(string installPath)
         {
-            //MainWindow.UseInstallerConsole("install","");
-            SelectInstallPath selectPathDialog = new SelectInstallPath(this)
-            {
-                WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner,
-                Owner = MainWindow.Instance,
-            };
-            MainWindow.DialogWindows.Push(selectPathDialog);
-            selectPathDialog.Show();
-            selectPathDialog.Focus();
             
-        }
-
-        public void InstallApp(string installPath)
-        {
-            MessageBox.Show(_releaseInfo.URL);
-            MainWindow.UseInstallerConsole("install", "C:\\Users\\User1\\Downloads\\test installer", _releaseInfo.URL, "publish.zip");
         }
 
         public class Releases

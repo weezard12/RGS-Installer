@@ -35,6 +35,7 @@ namespace RGS_Installer
         private void Install_Click(object sender, RoutedEventArgs e)
         {
             Close();
+            MainWindow.Instance.Focus();
             _appToInstall.InstallApp(_installPath);
         }
 

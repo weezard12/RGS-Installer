@@ -368,7 +368,7 @@ namespace RGS_Installer_Console
                 Console.BackgroundColor = ConsoleColor.Blue;
                 Console.Write("open this app as an Administrator");
                 Console.ResetColor();
-                Console.WriteLine(" for installing apps on this computer.");
+                Console.WriteLine(" for Installing / Updating the UI installer");
                 return;
             }
             Console.WriteLine("Starting Setup...");

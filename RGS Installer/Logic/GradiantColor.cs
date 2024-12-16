@@ -2,7 +2,7 @@
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace RGS_Installer
+namespace RGS_Installer.Logic
 {
     internal class GradientColor
     {
