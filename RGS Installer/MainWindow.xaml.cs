@@ -84,7 +84,14 @@ namespace RGS_Installer
             string argsText = String.Empty;
             foreach (string arg in args)
             {
-                argsText += arg + " ";
+                bool hasSpace = false;
+                // if a parameter contains a space like in a path for example it will add "" to make the path valid as one argument
+                if(arg.Contains(' '))
+                {
+                    argsText += @"""";
+                    hasSpace = true;
+                }   
+                argsText += arg + (hasSpace ? @""" " : " ");
             }
             argsText.Substring(0, argsText.Length - 1);
 

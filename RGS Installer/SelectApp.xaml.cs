@@ -37,7 +37,7 @@ namespace RGS_Installer
                 return;
 
 
-            MainWindow.UseInstallerConsole("installicon", $@"""{_releaseInfo.Name}""", $@"""{_releaseInfo.URL}""");
+            MainWindow.UseInstallerConsole("installicon", _releaseInfo.Name, _releaseInfo.URL);
             Dispatcher.Invoke(() =>
             {
                 BitmapImage appImage = GetImageSource(Path.Combine(Path.GetTempPath(), $"RGS Installer\\Icons\\{_releaseInfo.Name}.png"));
@@ -97,7 +97,8 @@ namespace RGS_Installer
 
         public void InstallApp(string installPath)
         {
-            MainWindow.UseInstallerConsole("install", installPath, _releaseInfo.URL);
+            MessageBox.Show(_releaseInfo.URL);
+            MainWindow.UseInstallerConsole("install", "C:\\Users\\User1\\Downloads\\test installer", _releaseInfo.URL, "publish.zip");
         }
 
         public class Releases
