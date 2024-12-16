@@ -39,9 +39,8 @@ namespace RGS_Installer.Logic
             ButtonsGrid.Children.Add(installLoading);
             Grid.SetRow(installLoading, 0);
 
-            MainWindow.UseInstallerConsoleOnOtherThread(FinishedInstalling, "install", "C:\\Users\\User1\\Downloads\\test installer", _releaseInfo.URL, "publish.zip");
+            MainWindow.UseInstallerConsoleOnOtherThread(FinishedInstalling, "install", installPath, _releaseInfo.URL, "publish.zip");
 
-            base.InstallApp(installPath);
         }
         public void FinishedInstalling()
         {

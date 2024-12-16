@@ -19,7 +19,7 @@ namespace RGS_Installer_Console
         private static readonly string LogFilePath = Path.Combine(Path.GetTempPath(), "RGS Installer\\rgs_installer_log.txt");
 
         // commands
-        // install {installationPath} {repository_name} {install_actions[] <create_desktop_shortcut> <save_in_apps.json>}
+        // install {installationPath} {release} {install_actions[] <create_desktop_shortcut> <save_in_apps.json>}
         // installicon {url} {name}
         // update {repository_name}
         // releases {username} - prints all of the urls to of the latest releases that have rgs_installer tag
@@ -246,28 +246,11 @@ namespace RGS_Installer_Console
                 }
             }
 
-            string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
-            CreateFileIfDoesntExist(installedAppsPath, @"
-{
-    ""installed_apps"": [
-    ]
-}");
-            Apps apps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
-
-            List<InstalledApp> installedApps;
-            if (apps == null)
-                installedApps = apps.InstalledApps.ToList();
-            else
-                installedApps = new List<InstalledApp>();
-
             InstalledApp installedApp = InstalledApp.FromUrl(releaseUrl);
             installedApp.LastUpdate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             installedApp.Path = installationPath;
-            installedApps.Add(installedApp);
 
-            apps.InstalledApps = installedApps.ToArray();
-
-            File.WriteAllText(installedAppsPath, JsonSerializer.Serialize<Apps>(apps));
+            Apps.AddInstalledApp(installedApp);
 
             //invokes optional code before closing the console
             try
@@ -369,6 +352,7 @@ namespace RGS_Installer_Console
                     return;
                 }
             }
+            //SafeDeleteFolder(path);
         }
         #endregion
 
@@ -685,6 +669,24 @@ namespace RGS_Installer_Console
                 UseShellExecute = false,
             };
             Process.Start(startInfo);
+        }
+
+        public static void SafeDeleteFolder(string path)
+        {
+            // DONT USE ITS NOT ACTUALLY SAFE
+
+            //just in case
+            if (path.Equals("Program Files") || Path.GetDirectoryName(path).Equals("C:\\") || path.Length < 15)
+                return;
+            try
+            {
+                Directory.Delete(path, true);
+            }
+            catch
+            {
+                Log("Error Faild to Safe Delete path: " + path);
+            }
+            
         }
         #endregion
 

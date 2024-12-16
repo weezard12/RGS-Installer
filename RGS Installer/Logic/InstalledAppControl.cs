@@ -22,7 +22,14 @@ namespace RGS_Installer.Logic
             openButton.OnClisckAction = OpenInstalledApp;
 
             ButtonsGrid.Children.Add(openButton);
-            Grid.SetRow(openButton, 1);
+            Grid.SetRow(openButton, 0);
+
+            CustomButton unInstall = new CustomButton("Uninstall", Color.FromArgb(0, 0, 0, 0), Color.FromArgb(1, 1, 1, 1));
+
+            unInstall.OnClisckAction = UnInstallApp;
+
+            ButtonsGrid.Children.Add(unInstall);
+            Grid.SetRow(unInstall, 1);
         }
         public void OpenInstalledApp()
         {
@@ -43,6 +50,10 @@ namespace RGS_Installer.Logic
 
         }
 
+        public void UnInstallApp()
+        {
+            MainWindow.UseInstallerConsole("uninstall", _installedApp.Path);
+        }
 
         #region Jsons
         // json for arry of installed apps

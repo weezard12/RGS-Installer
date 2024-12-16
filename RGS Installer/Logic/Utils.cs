@@ -16,7 +16,7 @@ namespace RGS_Installer.Logic
             if (Directory.Exists(path))
             {
                 // Get all .exe files from the folder
-                return Directory.GetFiles(path, "*.exe");
+                return Directory.GetFiles(path, "*.exe",SearchOption.AllDirectories);
             }
             else
             {
