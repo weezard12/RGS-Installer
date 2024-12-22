@@ -1,10 +1,13 @@
-﻿using System;
+﻿using RGS_Installer.SmallUiParts;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO.Packaging;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -52,7 +55,12 @@ namespace RGS_Installer.Logic
 
         public void UnInstallApp()
         {
-            MainWindow.UseInstallerConsole("uninstall", _installedApp.Path);
+            VerifyWindow verifyUnInstall = new VerifyWindow("Are you sure you want to uninstall the app in path:\n" + _installedApp.Path);
+            bool? result = verifyUnInstall.ShowDialog();
+            if (result == true)
+            {
+                MainWindow.UseInstallerConsole("uninstall", _installedApp.Path);
+            }
         }
 
         #region Jsons

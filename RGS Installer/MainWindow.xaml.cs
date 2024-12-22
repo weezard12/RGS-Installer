@@ -78,7 +78,11 @@ namespace RGS_Installer
                 Releases releases = JsonSerializer.Deserialize<Releases>(jsonFile);
                 foreach (ReleaseInfo release in releases.ReleasesInfos)
                 {
-                    InstalledApp matchedApp = installedApps?.InstalledApps.FirstOrDefault(app => app.AppName == release.RepoName);
+                    InstalledApp? matchedApp = null;
+
+                    if(installedApps != null && installedApps.InstalledApps != null)
+                        matchedApp = installedApps.InstalledApps.FirstOrDefault(app => app.AppName == release.RepoName);
+
                     if (matchedApp != null)
                         AppsPanel.Children.Add(new InstalledAppControl(release, matchedApp));
                     else

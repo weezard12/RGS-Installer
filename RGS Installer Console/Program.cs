@@ -2,13 +2,17 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Principal;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using static System.Environment;
 
 namespace RGS_Installer_Console
 {
     internal class Program
     {
+        public const string BUILD_NUM = "1.01 22/12/2024";
+
         // GitHub
         private static readonly string GITHUB_TOKEN = "";
         private const string INSTALLER_TAG = "rgs_installer";
@@ -38,7 +42,7 @@ namespace RGS_Installer_Console
                 {
                 }
             }
-            
+
             // commands
             if (args.Length == 0)
             {
@@ -78,11 +82,20 @@ namespace RGS_Installer_Console
 
             commandsLoop:
             string input = Console.ReadLine();
-            if (input == "") return;
-            if (input == "debug")
-                MonitorFile(LogFilePath);
-            else if(input == "clear")
-                Console.Clear();
+            switch(input)
+            {
+                case "":
+                    return;
+                case "debug":
+                    MonitorFile(LogFilePath);
+                    break;
+                case "clear":
+                    Console.Clear();
+                    break;
+                case "buildnum":
+                    Console.WriteLine("Build Number: "+BUILD_NUM);
+                    break;
+            } 
             goto commandsLoop;
         }
 
@@ -342,17 +355,11 @@ namespace RGS_Installer_Console
         #region UnInstallLogic
         private static void UnInstall(string path)
         {
-            CreateFolderIfDoesntExist(Path.GetDirectoryName(path), true);
-            InstalledApp[] installedApps = Apps.GetInstalledApps().InstalledApps;
-            foreach (var installedApp in installedApps)
-            {
-                if(installedApp.Path == path)
-                {
-                    Apps.RemoveInstalledApp(installedApp);
-                    return;
-                }
-            }
-            //SafeDeleteFolder(path);
+            Log("Log Uninstalling in path: " + path);
+            
+            Apps.RemoveInstalledAppByPath(path);
+            SafeDeleteApp(path);
+            Environment.Exit(0);
         }
         #endregion
 
@@ -671,22 +678,55 @@ namespace RGS_Installer_Console
             Process.Start(startInfo);
         }
 
-        public static void SafeDeleteFolder(string path)
+        public static void SafeDeleteApp(string path)
         {
-            // DONT USE ITS NOT ACTUALLY SAFE
-
             //just in case
-            if (path.Equals("Program Files") || Path.GetDirectoryName(path).Equals("C:\\") || path.Length < 15)
+            foreach (SpecialFolder folder in Enum.GetValues(typeof(Environment.SpecialFolder)))
+                if (path.Equals(Environment.GetFolderPath(folder)))
+                    return;
+
+            if (Path.GetDirectoryName(path).Equals("C:\\") || path.Length < 10)
                 return;
+
             try
             {
-                Directory.Delete(path, true);
+                if(Directory.Exists(path))
+                    Directory.Delete(path, true);
+                else if (File.Exists(path))
+                    File.Delete(path);
+                else
+                    Log("Warn Path to delete does not exists: " + path);
             }
             catch
             {
                 Log("Error Faild to Safe Delete path: " + path);
             }
             
+        }
+
+        public static bool ArePathsTheSame(string path1, string path2)
+        {
+            if(path1.Equals(path2)) return true;
+
+            StringBuilder sb = new StringBuilder();
+            foreach(char c in path1)
+            {
+                if(c == '\\')
+                    sb.Append("\\");
+                sb.Append(c);
+            }
+            if (sb.ToString().Equals(path2)) return true;
+
+            sb.Clear();
+            foreach (char c in path2)
+            {
+                if (c == '\\')
+                    sb.Append("\\");
+                sb.Append(c);
+            }
+            if (sb.ToString().Equals(path1)) return true;
+
+            return false;
         }
         #endregion
 
@@ -740,7 +780,13 @@ namespace RGS_Installer_Console
                     ""installed_apps"": [
                     ]
                 }");
-                return JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
+
+                Apps? installedApps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
+                if(installedApps == null)
+                    installedApps = new Apps();
+                if (installedApps.InstalledApps == null)
+                    installedApps.InstalledApps = [];
+                return installedApps;
             }
             public static void SetInstalledApps(Apps apps)
             {
@@ -754,10 +800,29 @@ namespace RGS_Installer_Console
             }
             public static void RemoveInstalledApp(InstalledApp appToRemove)
             {
+                Log("Log Uninstalling App:" + appToRemove);
                 Apps installedApps = GetInstalledApps();
                 List<InstalledApp> currentInstalledApps = installedApps.InstalledApps.ToList();
                 currentInstalledApps.Remove(appToRemove);
                 installedApps.InstalledApps = currentInstalledApps.ToArray();
+
+                SetInstalledApps(installedApps);
+            }
+            public static void RemoveInstalledAppByPath(string path)
+            {
+                bool uninstalled = false;
+                List<InstalledApp> currentInstalledApps = Apps.GetInstalledApps().InstalledApps.ToList();
+                for(int i = 0; i < currentInstalledApps.Count;)
+                {
+                    if (!uninstalled && ArePathsTheSame(currentInstalledApps[i].Path, path))
+                    {
+                        currentInstalledApps.RemoveAt(i);
+                        uninstalled = true;
+                    }
+                    else
+                        i++;
+                }
+                Apps installedApps = new Apps() { InstalledApps = currentInstalledApps.ToArray() };
 
                 SetInstalledApps(installedApps);
             }
@@ -829,6 +894,17 @@ namespace RGS_Installer_Console
                     Log($"Error Failed to parse URL: {url}. Error: {ex.Message}. "+ ex);
                 }
                 return null;
+            }
+
+            public override string ToString()
+            {
+                return $"InstalledApp:\n" +
+                       $"- PublisherName: {PublisherName ?? "N/A"}\n" +
+                       $"- AppName: {AppName ?? "N/A"}\n" +
+                       $"- AppTag: {AppTag ?? "N/A"}\n" +
+                       $"- Path: {Path ?? "N/A"}\n" +
+                       $"- LastUpdate: {LastUpdate ?? "N/A"}\n" +
+                       $"- RepoURL: {RepoURL ?? "N/A"}";
             }
         }
 
