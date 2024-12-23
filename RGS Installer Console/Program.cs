@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Linq;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
@@ -83,24 +85,9 @@ namespace RGS_Installer_Console
 
             commandsLoop:
             string input = Console.ReadLine();
-            switch(input)
-            {
-                case "":
-                    return;
-                case "debug":
-                    MonitorFile(LogFilePath);
-                    break;
-                case "clear":
-                    Console.Clear();
-                    break;
-                case "buildnum":
-                    Console.Write("Version ");
-                    Console.BackgroundColor = ConsoleColor.Magenta;
-                    Console.Write($"{BUILD_VERSION_NAME}");
-                    Console.ResetColor();
-                    Console.WriteLine($" Build Date: {BUILD_DATE}");
-                    break;
-            } 
+            if (input == "")
+                return;
+            SimpleCommand.RunCommand(input);
             goto commandsLoop;
         }
 
@@ -594,7 +581,7 @@ namespace RGS_Installer_Console
                 {
                     // Read the new line added to the file
                     string[] lines = File.ReadAllLines(filePath);
-                    WriteLineWithColors(lines[lines.Length - 1]);
+                    DebugWriteLineWithColors(lines[lines.Length - 1]);
                 }
                 catch
                 {
@@ -606,7 +593,19 @@ namespace RGS_Installer_Console
             watcher.EnableRaisingEvents = true;
         }
 
-        private static void WriteLineWithColors(string message)
+        public static void WriteLineWithColors(string message)
+        {
+            string[] parts = message.Split(new[] { ' ' }, StringSplitOptions.None);
+            
+            foreach (var part in parts)
+                if(part.ToUpper().Equals(part) && Enum.TryParse(typeof(ConsoleColor), part, true, out object? result))
+                    Console.ForegroundColor = (ConsoleColor) result;
+                else 
+                    Console.Write(part+" ");
+            Console.WriteLine();
+        }
+
+        private static void DebugWriteLineWithColors(string message)
         {
             // Split the message into parts based on spaces to handle words
             string[] parts = message.Split(new[] { ' ' }, StringSplitOptions.None);
@@ -914,5 +913,68 @@ namespace RGS_Installer_Console
         }
 
         #endregion
+
+        private class SimpleCommand
+        {
+            public static SimpleCommand[]? Commands;
+            public static void SetupCommands()
+            {
+                if (Commands != null)
+                    return;
+                Commands =
+                [
+                    new SimpleCommand("debug", "db", "Shows the installer log file at runtime.", new Action(() => { MonitorFile(LogFilePath); })),
+                    new SimpleCommand("clear", "clr", "Clears the console.", new Action(Console.Clear)),
+                    new SimpleCommand("buildnum", "bn", "Shows the 'Build Num' of the app.\n(The build date and additional info about the current version)", new Action(() =>
+                    {
+                        Console.Write("Version ");
+                        Console.BackgroundColor = ConsoleColor.Magenta;
+                        Console.Write($"{BUILD_VERSION_NAME}");
+                        Console.ResetColor();
+                        Console.WriteLine($" Build Date: {BUILD_DATE}");
+                    })),
+                    new SimpleCommand("help", "help", "", new Action(DisplayHelpOfAll)),
+                ];
+            }
+            public static void RunCommand(string commandLine)
+            {
+                SetupCommands();
+                string[] args = commandLine.Split(' ');
+                foreach (SimpleCommand command in Commands)
+                    if(command.UsedCommand(args))
+                        return;
+            }
+            public static void DisplayHelpOfAll()
+            {
+                Console.WriteLine("All of the RGS Installer Console Simple Commands:");
+                foreach (SimpleCommand command in Commands)
+                    command.DisplayHelp();
+            }
+
+            private readonly string _name;
+            private readonly string _shortcutName;
+            private readonly string _description;
+            private readonly Action _action;
+            public SimpleCommand(string name, string shortcutName, string description, Action action)
+            {
+                _name = name;
+                _shortcutName = shortcutName;
+                _description = description;
+                _action = action;
+            }
+            public bool UsedCommand(string[] args)
+            {
+                if (args[0].ToLower() != _name && args[0].ToLower() != _shortcutName)
+                    return false;
+                _action.Invoke();
+                return true;
+            }
+            public void DisplayHelp()
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                WriteLineWithColors($"GREEN - DARKGRAY Command: WHITE {_name} DARKGRAY / WHITE {_shortcutName}");
+            }
+
+        }
     }
 }
