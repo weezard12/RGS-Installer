@@ -22,38 +22,21 @@ namespace RGS_Installer
     {
         private SelectApp _appToInstall;
 
-        private string _installPath;
-
         public SelectInstallPath(SelectApp appToInstall)
         {
             InitializeComponent();
 
+            this._appToInstall = appToInstall;
             this.ShowInTaskbar = false;
-            _appToInstall = appToInstall;
         }
 
         private void Install_Click(object sender, RoutedEventArgs e)
         {
             Close();
             MainWindow.Instance.Focus();
-            _appToInstall.InstallApp(_installPath);
+            _appToInstall.InstallApp(SelectPathControl.SelectedPath);
         }
 
-        private void Path_Click(object sender, RoutedEventArgs e)
-        {
-            OpenFolderDialog openFileDialog = new OpenFolderDialog();
-
-            bool? response = openFileDialog.ShowDialog();
-
-            if (response == true)
-                USetInstallPath(openFileDialog.FolderName);
-            
-        }
-        private void USetInstallPath(string path)
-        {
-            _installPath = path;
-            PathText.Content = path;
-        }
 
         // Handles mouse drag to move the window
         private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

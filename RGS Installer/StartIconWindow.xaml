@@ -10,6 +10,24 @@
         Background="Transparent"
         AllowsTransparency="True"
         Title="Loading" Height="580" Width="512">
+    <Window.Resources>
+        <!-- Define the Storyboard -->
+        <Storyboard x:Key="OffsetAnimationStoryboard">
+            <!-- Animate the Offset property of the GradientStop -->
+            <DoubleAnimation
+                Storyboard.TargetName="LoadingProgress"
+                Storyboard.TargetProperty="Offset"
+                From="0.4" To="1.6"
+                Duration="0:0:3"
+                AutoReverse="False">
+
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseInOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+        </Storyboard>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -44,4 +62,9 @@
         </Border>
         <Label Grid.Row="1" Content="Loading..." FontSize="40" Foreground="Black"/>
     </Grid>
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="Window.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource OffsetAnimationStoryboard}" />
+        </EventTrigger>
+    </Window.Triggers>
 </Window>

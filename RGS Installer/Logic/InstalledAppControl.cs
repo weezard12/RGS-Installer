@@ -60,6 +60,7 @@ namespace RGS_Installer.Logic
             if (result == true)
             {
                 MainWindow.UseInstallerConsole("uninstall", _installedApp.Path);
+                MainWindow.Instance.RefreshAvilableApps();
             }
         }
 

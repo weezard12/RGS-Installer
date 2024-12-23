@@ -24,16 +24,7 @@ namespace RGS_Installer
         {
             InitializeComponent();
             this.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-/*            new Thread(new ThreadStart(() =>
-            {
-
-                    while (LoadingProgress.Offset < 2)
-                    {
-                        LoadingProgress.Offset += 0.01;
-                        Thread.Sleep(100);
-                    }
-                
-            })).Start();*/
+            return;
         }
     }
 }

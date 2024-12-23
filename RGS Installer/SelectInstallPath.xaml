@@ -3,13 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:RGS_Installer"
+        xmlns:local="clr-namespace:RGS_Installer" xmlns:smalluiparts="clr-namespace:RGS_Installer.SmallUiParts"
         mc:Ignorable="d"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
         AllowsTransparency="True"
-        Title="SelectInstallPath" Height="100" Width="400"
+        Title="SelectInstallPath" Height="120" Width="400"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
         >
     <Grid>
@@ -28,6 +28,7 @@
             <RowDefinition/>
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Label Content="Installesion Path:" FontSize="15"/>
 
@@ -37,11 +38,7 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Click="Path_Click" >
-
-            </Button>
-            <Label x:Name="PathText" Content="C:\" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                <Button Grid.Column="2" Click="Install_Click" Content="Install" Margin="0" />
+                <smalluiparts:SelectPath x:Name="SelectPathControl"/>
             </Grid>
             <Grid Grid.Row="2">
                 <Grid.ColumnDefinitions>
@@ -51,6 +48,7 @@
                 <Label Content="Version:" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                 <ComboBox Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
             </Grid>
+            <Button Content="Install" Grid.Row="3" Click="Install_Click"/>
         </Grid>
     </Grid>
 </Window>
