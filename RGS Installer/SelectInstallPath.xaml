@@ -9,7 +9,7 @@
         ResizeMode="NoResize"
         Background="Transparent"
         AllowsTransparency="True"
-        Title="SelectInstallPath" Height="120" Width="400"
+        Title="SelectInstallPath" Height="125" Width="400"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
         >
     <Grid>
@@ -46,9 +46,22 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <Label Content="Version:" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                <ComboBox Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                <ComboBox Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" SelectedIndex="0">
+                    <ComboBoxItem Content="default (recommended)"/>
+                </ComboBox>
             </Grid>
-            <Button Content="Install" Grid.Row="3" Click="Install_Click"/>
+            <Border CornerRadius="10" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.3">
+                <Border.Background>
+                    <SolidColorBrush Color="Black">
+                        
+                    </SolidColorBrush>
+                </Border.Background>
+            </Border>
+            <Button Content="Install" Grid.Row="3" Click="Install_Click" Background="Transparent" BorderThickness="0" FontSize="16" Foreground="Black">
+                <Button.Effect>
+                    <DropShadowEffect BlurRadius="10" ShadowDepth="0"/>
+                </Button.Effect>
+            </Button>
         </Grid>
     </Grid>
 </Window>

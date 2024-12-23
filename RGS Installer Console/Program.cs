@@ -11,7 +11,8 @@ namespace RGS_Installer_Console
 {
     internal class Program
     {
-        public const string BUILD_NUM = "1.01 22/12/2024";
+        public const string BUILD_DATE = "23/12/2024";
+        public const string BUILD_VERSION_NAME = "ENCHANTED";
 
         // GitHub
         private static readonly string GITHUB_TOKEN = "";
@@ -93,7 +94,11 @@ namespace RGS_Installer_Console
                     Console.Clear();
                     break;
                 case "buildnum":
-                    Console.WriteLine("Build Number: "+BUILD_NUM);
+                    Console.Write("Version ");
+                    Console.BackgroundColor = ConsoleColor.Magenta;
+                    Console.Write($"{BUILD_VERSION_NAME}");
+                    Console.ResetColor();
+                    Console.WriteLine($" Build Date: {BUILD_DATE}");
                     break;
             } 
             goto commandsLoop;
