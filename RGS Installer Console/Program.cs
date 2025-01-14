@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿#define ENCHANTED
+using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
 using System.IO.Compression;
@@ -13,9 +14,13 @@ namespace RGS_Installer_Console
 {
     internal class Program
     {
-        public const string BUILD_DATE = "23/12/2024";
+        //Build
+        public const string BUILD_DATE = "14/01/2025";
+#if ENCHANTED
         public const string BUILD_VERSION_NAME = "ENCHANTED";
-
+#else
+        public const string BUILD_VERSION_NAME = "LIGHT";
+#endif
         // GitHub
         private static readonly string GITHUB_TOKEN = "";
         private const string INSTALLER_TAG = "rgs_installer";
@@ -33,6 +38,7 @@ namespace RGS_Installer_Console
         // desktop_shortcut {path}
         public static void Main(string[] args)
         {
+
             // creates and clears the logging file
             if (LoggingEnabled)
             {
@@ -46,12 +52,13 @@ namespace RGS_Installer_Console
                 }
             }
 
-            // commands
+            // Commands
             if (args.Length == 0)
             {
                 Console.Title = "RGS Installer Console";
                 StartBasicSetup();
             }
+#if ENCHANTED
             else if (args[0] == "install")
                 InstallCommand(args[1], args[2], args[3]);
 
@@ -80,17 +87,19 @@ namespace RGS_Installer_Console
                 if (args.Length > 1)
                     UnInstall(args[1]);
             }
+#endif
             else
-                Console.WriteLine("Error Invalid args");
+                Console.WriteLine("Error - Invalid args");
 
-            commandsLoop:
+        commandsLoop:
             string input = Console.ReadLine();
             if (input == "")
                 return;
             SimpleCommand.RunCommand(input);
             goto commandsLoop;
-        }
 
+        }
+#if ENCHANTED
         #region GetReleases
         public static async void GetReleases(string userName = "weezard12", string tag = "")
         {
@@ -224,8 +233,9 @@ namespace RGS_Installer_Console
             return releaseInfo;
         }
         #endregion
-
+#endif
         #region InstallLogic
+
         private static async void InstallCommand(string installationPath, string releaseUrl, string assetName, Action doAfterInstall = null)
         {
             string tempInstallPath = Path.Combine(Path.GetTempPath(), "RGS Installer\\Download");
@@ -250,13 +260,13 @@ namespace RGS_Installer_Console
                     Log("Error "+ex.Message);
                 }
             }
-
+#if ENCHANTED
             InstalledApp installedApp = InstalledApp.FromUrl(releaseUrl);
             installedApp.LastUpdate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             installedApp.Path = installationPath;
 
             Apps.AddInstalledApp(installedApp);
-
+#endif
             //invokes optional code before closing the console
             try
             {
@@ -269,7 +279,7 @@ namespace RGS_Installer_Console
             if(CLOSE_AFTER_COMMAND)
                 Environment.Exit(0);
         }
-
+#if ENCHANTED
         private static async void InstallReleaseIcon(ReleaseInfo releaseInfo)
         {
             InstallReleaseIcon(releaseInfo.Name, releaseInfo.URL, releaseInfo.Tag);
@@ -288,6 +298,7 @@ namespace RGS_Installer_Console
         {
             return await InstallReleaseInFolder(releaseInfo.URL, assetName, installPath, usePathAsFileName);
         }
+#endif
         /// <summary>
         /// installs a release asset in a folder. takes in the release Ulease URL with the tag!
         /// </summary>
@@ -342,8 +353,8 @@ namespace RGS_Installer_Console
 
             return savedFiles;
         }
-        #endregion
-
+#endregion
+#if ENCHANTED
         #region UnInstallLogic
         private static void UnInstall(string path)
         {
@@ -354,8 +365,8 @@ namespace RGS_Installer_Console
             Environment.Exit(0);
         }
         #endregion
-
-        #region BasicSetup
+#endif
+#region BasicSetup
         private static void StartBasicSetup()
         {
             Console.ResetColor();
@@ -391,8 +402,6 @@ namespace RGS_Installer_Console
 
             string consolePath = Path.Combine(newFolderPath, "RGS Installer Console.exe");
 
-            if (!File.Exists(consolePath))
-                File.Copy(Process.GetCurrentProcess().MainModule.FileName, consolePath);
 
             string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
             CreateFileIfDoesntExist(installedAppsPath, @"
@@ -403,6 +412,13 @@ namespace RGS_Installer_Console
 
             // app will be open after installing
             CLOSE_AFTER_COMMAND = false;
+
+#if ENCHANTED
+            if (!File.Exists(consolePath))
+                File.Copy(Process.GetCurrentProcess().MainModule.FileName, consolePath);
+#else
+            await InstallReleaseInFolder("https://github.com/weezard12/RGS-Installer/releases/tag/rgs_installer", "RGS.Installer.Console.exe", consolePath, true);
+#endif
 
             string InstallerExePath = Path.Combine(newFolderPath, "RGS Installer\\RGS Installer.exe");
             InstallCommand(newFolderPath, "https://github.com/weezard12/RGS-Installer/releases/tag/rgs_installer", "publish.zip",
@@ -416,7 +432,7 @@ namespace RGS_Installer_Console
                     };
                     Process.Start(psi);
                 }));
-            CreateShortcutOnDesktop(InstallerExePath,"RGS Installer");
+            CreateShortcutOnDesktop(InstallerExePath, "RGS Installer");
             CreateShortcutOnDesktop(consolePath, "RGS Installer");
         }
 
@@ -733,7 +749,7 @@ namespace RGS_Installer_Console
             return false;
         }
         #endregion
-
+#if ENCHANTED
         #region jsons
         // json for array of releases
         private class Releases
@@ -914,6 +930,7 @@ namespace RGS_Installer_Console
 
         #endregion
 
+#endif
         private class SimpleCommand
         {
             public static SimpleCommand[]? Commands;
