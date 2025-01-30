@@ -1,4 +1,5 @@
 ﻿using RGS_Installer.Logic;
+using RGS_Installer.SmallUiParts;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -74,8 +75,20 @@ namespace RGS_Installer
             Dispatcher.Invoke(() =>
             {
                 AppsPanel.Children.Clear();
-            
-                Releases releases = JsonSerializer.Deserialize<Releases>(jsonFile);
+
+                Releases releases = new Releases();
+                try
+                {
+                    releases = JsonSerializer.Deserialize<Releases>(jsonFile);
+                }
+                catch(Exception ex)
+                {
+                    new ErrorWindow("Error Loading releases json:" + jsonFile).ShowDialog();
+                }
+
+                if(releases.ReleasesInfos == null)
+                    return;
+                
                 foreach (ReleaseInfo release in releases.ReleasesInfos)
                 {
                     InstalledApp? matchedApp = null;
