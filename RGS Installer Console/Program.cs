@@ -15,7 +15,7 @@ namespace RGS_Installer_Console
     internal class Program
     {
         //Build
-        public const string BUILD_DATE = "14/01/2025";
+        public const string BUILD_DATE = "30/01/2025";
 #if ENCHANTED
         public const string BUILD_VERSION_NAME = "ENCHANTED";
 #else
@@ -32,7 +32,7 @@ namespace RGS_Installer_Console
 
         // commands
         // install {installationPath} {release} {install_actions[] <create_desktop_shortcut> <save_in_apps.json>}
-        // installicon {url} {name}
+        // installicon {name} {url} 
         // update {repository_name}
         // releases {username} - prints all of the urls to of the latest releases that have rgs_installer tag
         // desktop_shortcut {path}
@@ -288,7 +288,8 @@ namespace RGS_Installer_Console
         {
             string iconsPath = Path.Combine(Path.GetTempPath(), $"RGS Installer\\Icons\\{releaseName}.png");
 
-            CreateFolderIfDoesntExist(iconsPath, true);
+            CreateFolderIfDoesntExist(iconsPath);
+            DeleteFileIfExist(iconsPath);
             await InstallReleaseInFolder(releaseUrl, "icon.png", iconsPath, true);
 
             Environment.Exit(0);
@@ -747,6 +748,23 @@ namespace RGS_Installer_Console
             if (sb.ToString().Equals(path1)) return true;
 
             return false;
+        }
+
+        public static void DeleteFileIfExist(string path)
+        {
+            if (Directory.Exists(path)) return;
+            if (!File.Exists(path)) return;
+
+            try
+            {
+                File.Delete(path);
+                Log("Log Deleted File: " + path);
+            }
+            catch
+            {
+                Log("Error Failed to Deleted File: " + path);
+            }
+
         }
         #endregion
 #if ENCHANTED

@@ -36,9 +36,6 @@ namespace RGS_Installer
         }
         private void SetAppImage()
         {
-            if (_releaseInfo.Tag != "rgs_installer")
-                return;
-
             MainWindow.UseInstallerConsole("installicon", _releaseInfo.Name, _releaseInfo.URL);
             Dispatcher.Invoke(() =>
             {
