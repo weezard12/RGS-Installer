@@ -42,10 +42,9 @@ namespace RGS_Installer_Console
             // creates and clears the logging file
             if (LoggingEnabled)
             {
-                string logFilePath = Path.Combine(Path.GetTempPath(), "RGS Installer\\rgs_installer_log.txt");
                 try
                 {
-                    File.WriteAllLines(logFilePath, []);
+                    File.WriteAllLines(LogFilePath, []);
                 }
                 catch (Exception ex)
                 {
