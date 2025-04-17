@@ -15,7 +15,7 @@ namespace RGS_Installer_Console
     internal class Program
     {
         //Build
-        public const string BUILD_DATE = "30/01/2025";
+        public const string BUILD_DATE = "17/04/2025";
 #if ENCHANTED
         public const string BUILD_VERSION_NAME = "ENCHANTED";
 #else
@@ -31,7 +31,7 @@ namespace RGS_Installer_Console
         private static readonly string LogFilePath = Path.Combine(Path.GetTempPath(), "RGS Installer\\rgs_installer_log.txt");
 
         // commands
-        // install {installationPath} {release} {install_actions[] <create_desktop_shortcut> <save_in_apps.json>}
+        // install {installationPath} {release} {asset name} {install_actions[] <create_desktop_shortcut> <save_in_apps.json>}
         // installicon {name} {url} 
         // update {repository_name}
         // releases {username} - prints all of the urls to of the latest releases that have rgs_installer tag
@@ -59,37 +59,40 @@ namespace RGS_Installer_Console
                 StartBasicSetup();
             }
 #if ENCHANTED
-            else if (args[0] == "install")
-                InstallCommand(args[1], args[2], args[3]);
+            else switch(args[0])
+            {
+                case "install":
+                    InstallCommand(args[1], args[2], args[3]);
+                    break;
 
-            else if (args[0] == "releases")
-            {
-                if(args.Length > 1)
-                    GetReleases(args[1]);
-                else
-                    GetReleases();
-            }
-                
-            else if (args[0] == "installicon")
-            {
-                //Console.WriteLine(args[0] + " " + args[1] + " " + args[2]);
-                InstallReleaseIcon(args[1], args[2]);
-            }
-            else if (args[0] == "desktop_shortcut")
-            {
-                if (args.Length == 2)
-                    CreateShortcutOnDesktop(args[1], Path.GetFileNameWithoutExtension(args[1]));
-                else if(args.Length == 3)
-                    CreateShortcutOnDesktop(args[1], args[2]);
-            }
-            else if (args[0] == "uninstall")
-            {
-                if (args.Length > 1)
-                    UnInstall(args[1]);
+                case "releases":
+                    if (args.Length > 1)
+                        GetReleases(args[1]);
+                    else
+                        GetReleases();
+                    break;
+
+                case "installicon":
+                    InstallReleaseIcon(args[1], args[2]);
+                    break;
+
+                case "desktop_shortcut":
+                    if (args.Length == 2)
+                        CreateShortcutOnDesktop(args[1], Path.GetFileNameWithoutExtension(args[1]));
+                    else if (args.Length == 3)
+                        CreateShortcutOnDesktop(args[1], args[2]);
+                    break;
+
+                case "uninstall":
+                    if (args.Length > 1)
+                        UnInstall(args[1]);
+                    break;
+
+                default:
+                    Console.WriteLine("Error - Invalid args");
+                    break;
             }
 #endif
-            else
-                Console.WriteLine("Error - Invalid args");
 
         commandsLoop:
             string input = Console.ReadLine();
@@ -242,43 +245,80 @@ namespace RGS_Installer_Console
             CreateFolderIfDoesntExist(tempInstallPath, true);
 
             await InstallReleaseInFolder(releaseUrl, assetName, tempInstallPath, false);
-            try
-            {
-                ZipFile.ExtractToDirectory(Path.Combine(tempInstallPath, assetName), installationPath);
-            }
-            catch (Exception ex)
-            {
-                Log("Error "+ ex.Message);
+            string assetFilePath = Path.Combine(tempInstallPath, assetName);
+            string finalInstallPath = installationPath;
 
-                // if failed to unzip the file then just try to copy it as it is.
+            // Check if the file is extractable (zip)
+            bool isExtractable = IsExtractableFile(assetName);
+
+            if (isExtractable)
+            {
                 try
                 {
-                    File.Move(Path.Combine(tempInstallPath, assetName), Path.Combine(installationPath, assetName));
+                    // Extract directly to the installation path
+                    ZipFile.ExtractToDirectory(assetFilePath, installationPath);
+
+                    // Check if there's only one file in the installation directory
+                    string? singleFileName = GetSingleFileNameInZip(assetFilePath);
+                    if (singleFileName != null)
+                    {
+                        // Only one file, update the final path to point to this file
+                        finalInstallPath = Path.Combine(installationPath, singleFileName);
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Log("Error "+ex.Message);
+                    Log("Error " + ex.Message);
+
+                    // If failed to unzip the file then just try to copy it as it is
+                    try
+                    {
+                        File.Copy(assetFilePath, Path.Combine(installationPath, assetName), true);
+                        finalInstallPath = Path.Combine(installationPath, assetName);
+                    }
+                    catch (Exception copyEx)
+                    {
+                        Log("Error " + copyEx.Message);
+                    }
                 }
             }
+            else
+            {
+                // Not extractable, just copy the file directly
+                try
+                {
+                    File.Copy(assetFilePath, Path.Combine(installationPath, assetName), true);
+                    finalInstallPath = Path.Combine(installationPath, assetName);
+                }
+                catch (Exception ex)
+                {
+                    Log("Error " + ex.Message);
+                }
+            }
+
 #if ENCHANTED
             InstalledApp installedApp = InstalledApp.FromUrl(releaseUrl);
             installedApp.LastUpdate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            installedApp.Path = installationPath;
+            installedApp.Path = finalInstallPath;  // Use the updated path (single file or folder)
 
             Apps.AddInstalledApp(installedApp);
 #endif
-            //invokes optional code before closing the console
+
+            // Invokes optional code before closing the console
             try
             {
                 doAfterInstall?.Invoke();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Log($"Error Failed to invoke action after installation. Exeption: {ex}");
+                Log($"Error Failed to invoke action after installation. Exception: {ex}");
             }
-            if(CLOSE_AFTER_COMMAND)
+
+            if (CLOSE_AFTER_COMMAND)
                 Environment.Exit(0);
         }
+
+
 #if ENCHANTED
         private static async void InstallReleaseIcon(ReleaseInfo releaseInfo)
         {
@@ -300,6 +340,7 @@ namespace RGS_Installer_Console
             return await InstallReleaseInFolder(releaseInfo.URL, assetName, installPath, usePathAsFileName);
         }
 #endif
+
         /// <summary>
         /// installs a release asset in a folder. takes in the release Ulease URL with the tag!
         /// </summary>
@@ -337,7 +378,7 @@ namespace RGS_Installer_Console
                     Console.WriteLine($"Error Failed to download asset {assetName}. Status code: {assetResponse.StatusCode}. Download URL: {downloadUrl}");
 
 
-                string filePath = usePathAsFileName ? installPath :  Path.Combine(installPath, assetName);
+                string filePath = usePathAsFileName ? installPath : Path.Combine(installPath, assetName);
                 await using (var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     await assetResponse.Content.CopyToAsync(fileStream);
@@ -354,7 +395,7 @@ namespace RGS_Installer_Console
 
             return savedFiles;
         }
-#endregion
+        #endregion
 #if ENCHANTED
         #region UnInstallLogic
         private static void UnInstall(string path)
@@ -766,6 +807,88 @@ namespace RGS_Installer_Console
             }
 
         }
+
+        // Helper method to check if a file is extractable
+        private static bool IsExtractableFile(string fileName)
+        {
+            string extension = Path.GetExtension(fileName).ToLowerInvariant();
+            return extension == ".zip" || extension == ".rar" || extension == ".7z";
+        }
+
+        // Helper method to copy a directory and its contents
+        private static void CopyDirectory(string sourceDir, string destinationDir)
+        {
+            // Create destination directory if it doesn't exist
+            if (!Directory.Exists(destinationDir))
+            {
+                Directory.CreateDirectory(destinationDir);
+            }
+
+            // Copy all files
+            foreach (string filePath in Directory.GetFiles(sourceDir))
+            {
+                string fileName = Path.GetFileName(filePath);
+                string destFile = Path.Combine(destinationDir, fileName);
+                File.Copy(filePath, destFile, true);
+            }
+
+            // Copy all subdirectories
+            foreach (string dirPath in Directory.GetDirectories(sourceDir))
+            {
+                string dirName = Path.GetFileName(dirPath);
+                string destDir = Path.Combine(destinationDir, dirName);
+                CopyDirectory(dirPath, destDir);
+            }
+        }
+
+        public static bool IsSingleFileInZip(string zipFilePath)
+        {
+            if (!File.Exists(zipFilePath))
+                throw new FileNotFoundException("Zip file not found.", zipFilePath);
+
+            using (FileStream zipToOpen = new FileStream(zipFilePath, FileMode.Open, FileAccess.Read))
+            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
+            {
+                int fileCount = 0;
+
+                foreach (var entry in archive.Entries)
+                {
+                    if (!string.IsNullOrEmpty(entry.Name)) // Only count actual files
+                    {
+                        fileCount++;
+                        if (fileCount > 1)
+                            return false;
+                    }
+                }
+
+                return fileCount == 1;
+            }
+        }
+        // if there is just one file in the zip it will return the file name, else it will return null
+        public static string? GetSingleFileNameInZip(string zipFilePath)
+        {
+            if (!File.Exists(zipFilePath))
+                throw new FileNotFoundException("Zip file not found.", zipFilePath);
+
+            using (FileStream zipToOpen = new FileStream(zipFilePath, FileMode.Open, FileAccess.Read))
+            using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
+            {
+                string? singleFileName = null;
+
+                foreach (var entry in archive.Entries)
+                {
+                    if (!string.IsNullOrEmpty(entry.Name)) // It's a file, not a folder
+                    {
+                        if (singleFileName != null)
+                            return null; // Already found a file, so more than one
+                        singleFileName = entry.FullName;
+                    }
+                }
+
+                return singleFileName;
+            }
+        }
+
         #endregion
 #if ENCHANTED
         #region jsons
