@@ -84,7 +84,6 @@ namespace RGS_Installer
         {
             
         }
-
         public class Releases
         {
             [JsonPropertyName("releases_infos")]
@@ -99,22 +98,35 @@ namespace RGS_Installer
             [JsonPropertyName("repo_name")]
             public string RepoName { get; set; }
 
-            [JsonPropertyName("description")]
+            [JsonPropertyName("body")]
             public string Description { get; set; }
 
-            [JsonPropertyName("url")]
+            [JsonPropertyName("html_url")]
             public string URL { get; set; }
 
-            [JsonPropertyName("tag")]
+            [JsonPropertyName("tag_name")]
             public string Tag { get; set; }
 
-            [JsonPropertyName("date")]
+            [JsonPropertyName("published_at")]
             public string Date { get; set; }
+
+            [JsonPropertyName("assets")]
+            public Asset[] Assets { get; set; }
 
             public override string ToString()
             {
-                return string.Format("Name: {0}\n Repo Name: {1} \n URL: {2}\n Tag: {3}\n Date: {4}\n Description: {5}", Name, RepoName, URL, Tag, Date, Description);
+                return string.Format("Name: {0}\n Repo Name: {1} \n URL: {2}\n Tag: {3}\n Date: {4}\n Description: {5}",
+                    Name, RepoName, URL, Tag, Date, Description);
             }
+        }
+
+        public class Asset
+        {
+            [JsonPropertyName("name")]
+            public string Name { get; set; }
+
+            [JsonPropertyName("browser_download_url")]
+            public string DownloadUrl { get; set; }
         }
 
 

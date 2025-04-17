@@ -186,7 +186,7 @@ namespace RGS_Installer_Console
                     try
                     {
                         releaseInfos.Add(GetReleaseFromJson(releaseJson, repoName));
-                        Log(releaseInfos.Last().ToString().Replace('\n','.'));
+                        Log(releaseJson);
                     }
                     catch
                     {
@@ -219,18 +219,9 @@ namespace RGS_Installer_Console
         }
         private static ReleaseInfo GetReleaseFromJson(string releaseJson, string repoName = "No Name Loaded")
         {
-            var release = JObject.Parse(releaseJson);
-
             // Create and populate a ReleaseInfo object with release details
-            var releaseInfo = new ReleaseInfo
-            {
-                Name = release["name"]?.ToString(),
-                RepoName = repoName,
-                Description = release["body"]?.ToString(),
-                URL = release["html_url"]?.ToString(),
-                Tag = release["tag_name"]?.ToString(),
-                Date = release["published_at"]?.ToString()
-            };
+            ReleaseInfo releaseInfo =  JsonSerializer.Deserialize<ReleaseInfo>(releaseJson);
+            releaseInfo.RepoName = repoName;
 
             return releaseInfo;
         }
@@ -872,19 +863,24 @@ namespace RGS_Installer_Console
             using (FileStream zipToOpen = new FileStream(zipFilePath, FileMode.Open, FileAccess.Read))
             using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Read))
             {
-                string? singleFileName = null;
+                var fileEntries = archive.Entries
+                    .Where(e => !string.IsNullOrEmpty(e.Name)) // Only files
+                    .ToList();
 
-                foreach (var entry in archive.Entries)
-                {
-                    if (!string.IsNullOrEmpty(entry.Name)) // It's a file, not a folder
-                    {
-                        if (singleFileName != null)
-                            return null; // Already found a file, so more than one
-                        singleFileName = entry.FullName;
-                    }
-                }
+                if (fileEntries.Count == 1)
+                    return fileEntries[0].FullName;
 
-                return singleFileName;
+                // Check for single top-level folder
+                var topLevelFolders = archive.Entries
+                    .Select(e => e.FullName.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault())
+                    .Where(f => !string.IsNullOrEmpty(f))
+                    .Distinct()
+                    .ToList();
+
+                if (topLevelFolders.Count == 1)
+                    return topLevelFolders[0];
+
+                return null;
             }
         }
 
@@ -907,22 +903,35 @@ namespace RGS_Installer_Console
             [JsonPropertyName("repo_name")]
             public string RepoName { get; set; }
 
-            [JsonPropertyName("description")]
+            [JsonPropertyName("body")]
             public string Description { get; set; }
 
-            [JsonPropertyName("url")]
+            [JsonPropertyName("html_url")]
             public string URL { get; set; }
 
-            [JsonPropertyName("tag")]
+            [JsonPropertyName("tag_name")]
             public string Tag { get; set; }
 
-            [JsonPropertyName("date")]
+            [JsonPropertyName("published_at")]
             public string Date { get; set; }
+
+            [JsonPropertyName("assets")]
+            public Asset[] Assets { get; set; }
 
             public override string ToString()
             {
-                return string.Format("Name: {0}\n Repo Name: {1} \n URL: {2}\n Tag: {3}\n Date: {4}\n Description: {5}", Name, RepoName,URL,Tag,Date,Description);
+                return string.Format("Name: {0}\n Repo Name: {1} \n URL: {2}\n Tag: {3}\n Date: {4}\n Description: {5}",
+                    Name, RepoName, URL, Tag, Date, Description);
             }
+        }
+
+        private class Asset
+        {
+            [JsonPropertyName("name")]
+            public string Name { get; set; }
+
+            [JsonPropertyName("browser_download_url")]
+            public string DownloadUrl { get; set; }
         }
 
 
@@ -1067,6 +1076,8 @@ namespace RGS_Installer_Console
                        $"- RepoURL: {RepoURL ?? "N/A"}";
             }
         }
+
+
 
         #endregion
 
