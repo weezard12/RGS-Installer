@@ -9,6 +9,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using static System.Environment;
+using JsonLibrary;
+using static GlobalUtils.FileUtils;
+using static GlobalUtils.LoggingUtils;
 
 namespace RGS_Installer_Console
 {
@@ -468,73 +471,7 @@ namespace RGS_Installer_Console
             CreateShortcutOnDesktop(consolePath, "RGS Installer");
         }
 
-        private static void CreateFolderIfDoesntExist(string path, bool clearDirectory = false)
-        {
-            //just in case
-            if (path.Equals("Program Files") || Path.GetDirectoryName(path).Equals("C:\\") || path.Length < 15)
-                return;
-            
-            Log("Log Creating path " + path);
-            try
-            {
-                //if the path is to a file it will call the method again but with the file folder as path
-                if (Path.HasExtension(path))
-                {
-                    CreateFolderIfDoesntExist(Path.GetDirectoryName(path), clearDirectory);
-                    return;
-                }
 
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path);
-                    return;
-                }
-                if (clearDirectory)
-                {
-                    Directory.Delete(path, true);
-                    Directory.CreateDirectory(path);
-                }
-            }
-            catch
-            {
-                Log($@"Error The path ""{path}"" does not exists and returned an error");
-                Log($@"Log Trying again...");
-                try
-                {
-                    Directory.CreateDirectory(path);
-                }
-                catch
-                {
-                    File.Delete(path);
-                    CreateFolderIfDoesntExist(path, clearDirectory);
-                }
-            }
-        }
-        private static void CreateFileIfDoesntExist(string path, string content = "")
-        {
-            try
-            {
-                // If the path contains a directory structure, ensure it exists
-                string directoryPath = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directoryPath))
-                {
-                    CreateFolderIfDoesntExist(directoryPath);
-                }
-
-                // Check if the file already exists
-                if (!File.Exists(path))
-                {
-                    Log("overwriting file:"+ path);
-                    // Create the file and close the stream immediately
-                    File.WriteAllText(path,content);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log($@"Error The file ""{path}"" could not be created. Error: {ex.Message}");
-                throw; // Optionally rethrow the exception if needed
-            }
-        }
         #endregion
 
         #region Checks
@@ -584,27 +521,6 @@ namespace RGS_Installer_Console
         #endregion
 
         #region Utils
-        private static void Log(string message)
-        {
-            if (!LoggingEnabled)
-                return;
-
-            try
-            {
-                // Write the log message to the file
-                File.AppendAllText(LogFilePath, $"{DateTime.Now} {message}{Environment.NewLine}");
-            }
-            catch (Exception ex)
-            {
-                // Handle potential exceptions (e.g., lack of write permission)
-                if (ex is FileNotFoundException)
-                    try
-                    {
-                        File.Create(LogFilePath);
-                    }
-                    catch { }
-            }
-        }
 
 
         private static void MonitorFile(string filePath)
@@ -756,31 +672,6 @@ namespace RGS_Installer_Console
             
         }
 
-        public static bool ArePathsTheSame(string path1, string path2)
-        {
-            if(path1.Equals(path2)) return true;
-
-            StringBuilder sb = new StringBuilder();
-            foreach(char c in path1)
-            {
-                if(c == '\\')
-                    sb.Append("\\");
-                sb.Append(c);
-            }
-            if (sb.ToString().Equals(path2)) return true;
-
-            sb.Clear();
-            foreach (char c in path2)
-            {
-                if (c == '\\')
-                    sb.Append("\\");
-                sb.Append(c);
-            }
-            if (sb.ToString().Equals(path1)) return true;
-
-            return false;
-        }
-
         public static void DeleteFileIfExist(string path)
         {
             if (Directory.Exists(path)) return;
@@ -885,203 +776,6 @@ namespace RGS_Installer_Console
         }
 
         #endregion
-#if ENCHANTED
-        #region jsons
-        // json for array of releases
-        private class Releases
-        {
-            [JsonPropertyName("releases_infos")]
-            public ReleaseInfo[] ReleasesInfos { get; set; }
-        }
-
-        // json of a release
-        private class ReleaseInfo
-        {
-            [JsonPropertyName("name")]
-            public string Name { get; set; }
-
-            [JsonPropertyName("repo_name")]
-            public string RepoName { get; set; }
-
-            [JsonPropertyName("body")]
-            public string Description { get; set; }
-
-            [JsonPropertyName("html_url")]
-            public string URL { get; set; }
-
-            [JsonPropertyName("tag_name")]
-            public string Tag { get; set; }
-
-            [JsonPropertyName("published_at")]
-            public string Date { get; set; }
-
-            [JsonPropertyName("assets")]
-            public Asset[] Assets { get; set; }
-
-            public override string ToString()
-            {
-                return string.Format("Name: {0}\n Repo Name: {1} \n URL: {2}\n Tag: {3}\n Date: {4}\n Description: {5}",
-                    Name, RepoName, URL, Tag, Date, Description);
-            }
-        }
-
-        private class Asset
-        {
-            [JsonPropertyName("name")]
-            public string Name { get; set; }
-
-            [JsonPropertyName("browser_download_url")]
-            public string DownloadUrl { get; set; }
-        }
-
-
-        // json for arry of installed apps
-        private class Apps
-        {
-            [JsonPropertyName("apps")]
-            public InstalledApp[] InstalledApps { get; set; }
-
-            public static Apps GetInstalledApps()
-            {
-                string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
-                CreateFileIfDoesntExist(installedAppsPath, @"
-                {
-                    ""installed_apps"": [
-                    ]
-                }");
-
-                Apps? installedApps = JsonSerializer.Deserialize<Apps>(File.ReadAllText(installedAppsPath));
-                if(installedApps == null)
-                    installedApps = new Apps();
-                if (installedApps.InstalledApps == null)
-                    installedApps.InstalledApps = [];
-                return installedApps;
-            }
-            public static void SetInstalledApps(Apps apps)
-            {
-                string installedAppsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "RGS\\RGS Installer\\apps.json");
-                CreateFileIfDoesntExist(installedAppsPath, @"
-                {
-                    ""installed_apps"": [
-                    ]
-                }");
-                File.WriteAllText(installedAppsPath, JsonSerializer.Serialize(apps));
-            }
-            public static void RemoveInstalledApp(InstalledApp appToRemove)
-            {
-                Log("Log Uninstalling App:" + appToRemove);
-                Apps installedApps = GetInstalledApps();
-                List<InstalledApp> currentInstalledApps = installedApps.InstalledApps.ToList();
-                currentInstalledApps.Remove(appToRemove);
-                installedApps.InstalledApps = currentInstalledApps.ToArray();
-
-                SetInstalledApps(installedApps);
-            }
-            public static void RemoveInstalledAppByPath(string path)
-            {
-                bool uninstalled = false;
-                List<InstalledApp> currentInstalledApps = Apps.GetInstalledApps().InstalledApps.ToList();
-                for(int i = 0; i < currentInstalledApps.Count;)
-                {
-                    if (!uninstalled && ArePathsTheSame(currentInstalledApps[i].Path, path))
-                    {
-                        currentInstalledApps.RemoveAt(i);
-                        uninstalled = true;
-                    }
-                    else
-                        i++;
-                }
-                Apps installedApps = new Apps() { InstalledApps = currentInstalledApps.ToArray() };
-
-                SetInstalledApps(installedApps);
-            }
-
-            public static void AddInstalledApp(InstalledApp appToAdd)
-            {
-                Apps installedApps = GetInstalledApps();
-                List<InstalledApp> currentInstalledApps = installedApps.InstalledApps.ToList();
-                currentInstalledApps.Add(appToAdd);
-                installedApps.InstalledApps = currentInstalledApps.ToArray();
-
-                SetInstalledApps(installedApps);
-            }
-        }
-
-        // json of an installed app
-        private class InstalledApp
-        {
-            [JsonPropertyName("publisher_name")]
-            public string PublisherName { get; set; }
-            [JsonPropertyName("app_name")]
-            public string AppName { get; set; }
-            [JsonPropertyName("app_tag")]
-            public string AppTag { get; set; }
-            [JsonPropertyName("path")]
-            public string Path { get; set; }
-            [JsonPropertyName("last_update")]
-            public string LastUpdate { get; set; }
-            [JsonPropertyName("repo")]
-            public string RepoURL { get; set; }
-
-            public static InstalledApp FromUrl(string url)
-            {
-                try
-                {
-                    if (string.IsNullOrWhiteSpace(url))
-                        Log("Error URL cannot be null or empty");
-
-                    Uri uri = new Uri(url);
-                    if (!uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase))
-                        Log("Error URL must be from github.com");
-
-                    // Split the path into segments: "/weezard12/PlayFiles/releases/tag/test"
-                    string[] segments = uri.AbsolutePath.Trim('/').Split('/');
-                    if (segments.Length < 5 || segments[2] != "releases" || segments[3] != "tag")
-                        throw new ArgumentException("URL format is not valid for a GitHub release");
-
-                    // Extract information
-                    string publisher = segments[0];
-                    string appName = segments[1];
-                    string appTag = segments[4];
-
-                    // Construct the repository URL
-                    string repoURL = $"https://github.com/{publisher}/{appName}";
-
-                    // Return a populated InstalledApp object
-                    return new InstalledApp
-                    {
-                        PublisherName = publisher,
-                        AppName = appName,
-                        AppTag = appTag,
-                        RepoURL = repoURL,
-                        LastUpdate = DateTime.UtcNow.ToString("o"), // ISO 8601 format for last update
-                        Path = null // Path can be assigned later if applicable
-                    };
-                }
-                catch (Exception ex)
-                {
-                    Log($"Error Failed to parse URL: {url}. Error: {ex.Message}. "+ ex);
-                }
-                return null;
-            }
-
-            public override string ToString()
-            {
-                return $"InstalledApp:\n" +
-                       $"- PublisherName: {PublisherName ?? "N/A"}\n" +
-                       $"- AppName: {AppName ?? "N/A"}\n" +
-                       $"- AppTag: {AppTag ?? "N/A"}\n" +
-                       $"- Path: {Path ?? "N/A"}\n" +
-                       $"- LastUpdate: {LastUpdate ?? "N/A"}\n" +
-                       $"- RepoURL: {RepoURL ?? "N/A"}";
-            }
-        }
-
-
-
-        #endregion
-
-#endif
         private class SimpleCommand
         {
             public static SimpleCommand[]? Commands;

@@ -29,6 +29,7 @@
 	</ItemGroup>
 	
 	<ItemGroup>
+	  <ProjectReference Include="..\GlobalUtils\GlobalUtils.csproj" />
 	  <ProjectReference Include="..\JsonLibrary\JsonLibrary.csproj" />
 	</ItemGroup>
 </Project>
