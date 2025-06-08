@@ -32,6 +32,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\JsonLibrary\JsonLibrary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Assets\rgs_installer_icon512.png" />
     <Resource Include="weezard.png" />
   </ItemGroup>

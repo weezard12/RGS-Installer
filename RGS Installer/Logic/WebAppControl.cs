@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using static RGS_Installer.SelectApp;
+using JsonLibrary;
 
 namespace RGS_Installer.Logic
 {

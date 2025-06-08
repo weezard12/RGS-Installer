@@ -9,6 +9,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
 using static RGS_Installer.Logic.InstalledAppControl;
 using static RGS_Installer.SelectApp;
+using JsonLibrary;
 
 
 namespace RGS_Installer
