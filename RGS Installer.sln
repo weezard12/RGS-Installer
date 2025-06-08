@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RGS Installer", "RGS Instal
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RGS Installer Console", "RGS Installer Console\RGS Installer Console.csproj", "{F3FBB8A6-4CA8-400B-B3AD-DA4A166AAC37}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonLibrary", "JsonLibrary\JsonLibrary.csproj", "{506F25EE-D7CB-4F66-8267-10C9401B6F09}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{F3FBB8A6-4CA8-400B-B3AD-DA4A166AAC37}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3FBB8A6-4CA8-400B-B3AD-DA4A166AAC37}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3FBB8A6-4CA8-400B-B3AD-DA4A166AAC37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{506F25EE-D7CB-4F66-8267-10C9401B6F09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{506F25EE-D7CB-4F66-8267-10C9401B6F09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{506F25EE-D7CB-4F66-8267-10C9401B6F09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{506F25EE-D7CB-4F66-8267-10C9401B6F09}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
