@@ -3,65 +3,283 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:RGS_Installer" xmlns:smalluiparts="clr-namespace:RGS_Installer.SmallUiParts"
+        xmlns:local="clr-namespace:RGS_Installer" 
+        xmlns:smalluiparts="clr-namespace:RGS_Installer.SmallUiParts"
         mc:Ignorable="d"
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
         AllowsTransparency="True"
-        Title="SelectInstallPath" Height="125" Width="400"
-        MouseLeftButtonDown="Window_MouseLeftButtonDown"
-        >
-    <Grid>
-        <Border>
-            <Border CornerRadius="20" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
-    <GradientStop Color="#D8B5FF" Offset="0.1"/>
-    <GradientStop Color="	#1EAE98" Offset="1"/>
-    </LinearGradientBrush>
-    </Border.Background>
-    </Border>
-    </Border>
-    <Grid Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition/>
-            <RowDefinition/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-        <Label Content="Installesion Path:" FontSize="15"/>
+        Title="SelectInstallPath" 
+        Height="280" 
+        Width="500"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="8*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-                <smalluiparts:SelectPath x:Name="SelectPathControl"/>
-            </Grid>
-            <Grid Grid.Row="2">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width = "Auto"/>
-                    <ColumnDefinition/>
-                </Grid.ColumnDefinitions>
-                <Label Content="Version:" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                <ComboBox Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" SelectedIndex="0">
-                    <ComboBoxItem Content="default (recommended)"/>
+    <Window.Resources>
+        <!-- Modern Button Style -->
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background" Value="#6366F1"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="20,12"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#5B5FCF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#4F46E5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary Button Style -->
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Background" Value="#F3F4F6"/>
+            <Setter Property="Foreground" Value="#374151"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" 
+                                Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#E5E7EB"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern ComboBox Style -->
+        <Style x:Key="ModernComboBox" TargetType="ComboBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#D1D5DB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="templateRoot" 
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="6"
+                                    SnapsToDevicePixels="true">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="0"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter x:Name="contentPresenter" 
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
+                                                      Content="{TemplateBinding SelectionBoxItem}" 
+                                                      ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" 
+                                                      HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                                      IsHitTestVisible="false" 
+                                                      Margin="{TemplateBinding Padding}" 
+                                                      SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                                    <ToggleButton x:Name="toggleButton" 
+                                                  BorderBrush="Transparent" 
+                                                  BorderThickness="0" 
+                                                  Background="Transparent" 
+                                                  Grid.ColumnSpan="2" 
+                                                  IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" 
+                                                  ClickMode="Press"/>
+                                    <Path x:Name="arrow" 
+                                          Data="F1 M 0,0 L 2.667,2.66665 L 5.3334,0 L 5.3334,-1.78168 L 2.6667,0.88501 L0,-1.78168 L0,0 Z" 
+                                          Fill="#6B7280" 
+                                          Grid.Column="2" 
+                                          HorizontalAlignment="Center" 
+                                          Margin="0,0,12,0" 
+                                          VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <Popup x:Name="PART_Popup" 
+                                   AllowsTransparency="true" 
+                                   Grid.ColumnSpan="2" 
+                                   IsOpen="{Binding IsDropDownOpen, Source={x:Reference Name=templateRoot}}" 
+                                   Margin="1" 
+                                   PopupAnimation="{DynamicResource {x:Static SystemParameters.ComboBoxPopupAnimationKey}}" 
+                                   Placement="Bottom">
+                                <Border x:Name="dropDownBorder" 
+                                        Background="White" 
+                                        BorderBrush="#D1D5DB" 
+                                        BorderThickness="1"
+                                        CornerRadius="6"
+                                        Effect="{DynamicResource {x:Static SystemParameters.DropShadowKey}}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}" 
+                                        MinWidth="{Binding ActualWidth, ElementName=templateRoot}">
+                                    <ScrollViewer x:Name="DropDownScrollViewer">
+                                        <ItemsPresenter x:Name="ItemsPresenter" 
+                                                        KeyboardNavigation.DirectionalNavigation="Contained" 
+                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Main Card Background -->
+        <Border x:Name="MainCard" 
+                CornerRadius="16" 
+                Background="White">
+            <Border.Effect>
+                <DropShadowEffect Color="#000000" 
+                                  Opacity="0.15" 
+                                  BlurRadius="30" 
+                                  ShadowDepth="0"/>
+            </Border.Effect>
+        </Border>
+
+        <!-- Content Container -->
+        <Grid Margin="32,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="24"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0">
+                <TextBlock Text="Installation Setup" 
+                           FontSize="20" 
+                           FontWeight="Bold" 
+                           Foreground="#111827"
+                           Margin="0,0,0,4"/>
+                <TextBlock Text="Configure your installation preferences" 
+                           FontSize="13" 
+                           Foreground="#6B7280"/>
+            </StackPanel>
+
+            <!-- Installation Path Section -->
+            <StackPanel Grid.Row="2">
+                <TextBlock Text="Installation Path" 
+                           FontSize="14" 
+                           FontWeight="SemiBold" 
+                           Foreground="#374151"
+                           Margin="0,0,0,8"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <smalluiparts:SelectPath x:Name="SelectPathControl" Grid.Column="0"/>
+                    <Button Grid.Column="2" 
+                            Content="Browse..." 
+                            Style="{StaticResource SecondaryButton}"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Version Selection -->
+            <StackPanel Grid.Row="4">
+                <TextBlock Text="Version" 
+                           FontSize="14" 
+                           FontWeight="SemiBold" 
+                           Foreground="#374151"
+                           Margin="0,0,0,8"/>
+                <ComboBox SelectedIndex="0" 
+                          Style="{StaticResource ModernComboBox}"
+                          MinWidth="200"
+                          HorizontalAlignment="Left">
+                    <ComboBoxItem Content="Latest (Recommended)" FontWeight="Medium"/>
+                    <ComboBoxItem Content="Stable Release"/>
+                    <ComboBoxItem Content="Beta Version"/>
                 </ComboBox>
+            </StackPanel>
+
+            <!-- Installation Options -->
+            <StackPanel Grid.Row="6">
+                <TextBlock Text="Options" 
+                           FontSize="14" 
+                           FontWeight="SemiBold" 
+                           Foreground="#374151"
+                           Margin="0,0,0,8"/>
+                <StackPanel>
+                    <CheckBox Content="Create desktop shortcut" 
+                              FontSize="13" 
+                              Foreground="#4B5563"
+                              IsChecked="True"
+                              Margin="0,0,0,6"/>
+                    <CheckBox Content="Add to Start Menu" 
+                              FontSize="13" 
+                              Foreground="#4B5563"
+                              IsChecked="True"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Action Buttons -->
+            <Grid Grid.Row="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <Button Grid.Column="0" 
+                        Content="Cancel" 
+                        Style="{StaticResource SecondaryButton}"
+                        HorizontalAlignment="Left"
+                        MinWidth="100"/>
+
+                <Button Grid.Column="2" 
+                        Content="Install Now" 
+                        Style="{StaticResource ModernButton}"
+                        Click="Install_Click"
+                        MinWidth="120">
+                    <Button.Effect>
+                        <DropShadowEffect Color="#6366F1" 
+                                          Opacity="0.3" 
+                                          BlurRadius="12" 
+                                          ShadowDepth="0"/>
+                    </Button.Effect>
+                </Button>
             </Grid>
-            <Border CornerRadius="10" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.3">
-                <Border.Background>
-                    <SolidColorBrush Color="Black">
-                        
-                    </SolidColorBrush>
-                </Border.Background>
-            </Border>
-            <Button Content="Install" Grid.Row="3" Click="Install_Click" Background="Transparent" BorderThickness="0" FontSize="16" Foreground="Black">
-                <Button.Effect>
-                    <DropShadowEffect BlurRadius="10" ShadowDepth="0"/>
-                </Button.Effect>
-            </Button>
         </Grid>
     </Grid>
 </Window>

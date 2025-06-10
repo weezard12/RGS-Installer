@@ -15,16 +15,16 @@
 		<!-- or win-x86, linux-x64, etc. based on your target OS -->
 		<SelfContained>true</SelfContained>
 		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
-		<ApplicationIcon>Assets\rgs_installer_icon128.ico</ApplicationIcon>
+		<ApplicationIcon>Resources\Assets\rgs_installer_icon128.ico</ApplicationIcon>
 	</PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Assets\rgs_installer_icon512.png" />
+    <None Remove="Resources\Assets\rgs_installer_icon512.png" />
     <None Remove="weezard.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Assets\rgs_installer_icon128.ico" />
+    <Content Include="Resources\Assets\rgs_installer_icon128.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\rgs_installer_icon512.png" />
+    <Resource Include="Resources\Assets\rgs_installer_icon512.png" />
     <Resource Include="weezard.png" />
   </ItemGroup>
 
